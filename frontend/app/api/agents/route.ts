@@ -27,14 +27,19 @@ export async function GET() {
     const totalNum = Number(total)
     for (let i = 0; i < totalNum; i++) {
       const agent = await registry.getAgent(i)
+      const ownerAddress: string = agent.owner
       agents.push({
         tokenId: agent.tokenId.toString(),
         agentType: agent.agentType,
         ensName: agent.ensName,
         systemPromptRootHash: agent.storageRootHash,
         spawnCount: Number(agent.spawnCount),
-        contractAddress: registryAddress,
-        explorerUrl: `https://chainscan-galileo.0g.ai/address/${registryAddress}`,
+        /** The wallet that registered this agent — unique per agent */
+        owner: ownerAddress,
+        /** Shared AgentRegistry contract — same for all agents */
+        registryAddress,
+        /** Link to the owner's wallet on chainscan (unique per agent) */
+        explorerUrl: `https://chainscan-galileo.0g.ai/address/${ownerAddress}`,
       })
     }
 
