@@ -42,3 +42,10 @@ next-env.d.ts
 
 *.md
 !README.md
+
+artifacts/
+cache/
+node_modules/
+typechain-types/
+frontend/package-lock.json
+contracts/package-lock.json
