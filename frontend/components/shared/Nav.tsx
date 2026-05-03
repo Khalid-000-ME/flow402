@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useWallet } from '@/lib/wallet/WalletContext'
 import { Wallet, LogOut } from 'lucide-react'
@@ -21,8 +22,14 @@ export default function Nav() {
 
   return (
     <nav className="nav">
-      <Link href="/" className="nav-logo">
-        <span className="logo-mark">O</span>
+      <Link href="/" className="nav-logo" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+        <Image 
+          src="/logo.png" 
+          alt="Orchanet Logo" 
+          width={28} 
+          height={30} 
+          style={{ borderRadius: '6px' }}
+        />
         <span>Orcha<span className="text-yellow">net</span></span>
       </Link>
 

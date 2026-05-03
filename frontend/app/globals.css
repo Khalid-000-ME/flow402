@@ -322,13 +322,15 @@ h1, h2, h3, h4, h5, h6 {
 .nav {
   position: fixed;
   top: 10px;
-  left: 12px;
-  right: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
   z-index: 100;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
+  justify-content: center;
+  gap: 32px;
+  padding: 0 16px 0 20px;
   height: 54px;
   border-radius: var(--radius-lg);
   border: 1px solid rgba(255,255,255,0.07);
@@ -386,10 +388,7 @@ h1, h2, h3, h4, h5, h6 {
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 2px;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  gap: 8px;
 }
 
 .nav-link {

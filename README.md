@@ -1,274 +1,165 @@
-# Orcha-net
+# Orchanet 🌐
 
-> **Describe what needs to be done. Watch a network of specialized agents spawn, compete, and prove every step on-chain.**
+> **Decentralized AI Orchestration. Verifiable Intelligence. Seamless Execution.**
 
-Orcha-net is a decentralized agent-spawning network where a user's intent triggers an orchestrator that autonomously spawns specialized sub-agents, routes them through on-chain settled inference (0G Compute TEEs), has them debate via a critic layer, stores the immutable reasoning chain on 0G Storage, and surfaces every transaction hash, root hash, and iNFT state change as a live, clickable audit trail.
-
----
-
-## Full Technical Flow
-
-> **Short answer: yes, you've got it right.** But there are two critical layers most people miss — both inside what looks like a single "inference call."
-
-### What happens when you submit a chat prompt
-
-```
-POST /api/spawn  →  SSE stream  →  orchestrate()
-```
-
-The moment you hit send, a **Server-Sent Events (SSE)** stream opens from your browser to the Next.js API route. The orchestrator runs server-side and emits events as each step completes. Here is the full sequence in order:
+Orchanet is a multi-agent AI pipeline built for the decentralized web. By orchestrating a symphony of specialized AI agents (Auditors, Tokenomics Modelers, DeFi Analysts, and Critics), Orchanet breaks down complex crypto decisions into verifiable, auditable, and actionable insights—and can automatically execute trades on your behalf.
 
 ---
 
-### Step 1 — Planning Pass (1 inference + 1 on-chain settlement)
+## Architecture & Workflow
 
-The **Orchestrator** agent reads your prompt and decides which specialist agents to spawn. This itself is a full 0G Compute inference call:
-
-1. `broker.inference.getServiceMetadata(providerAddr)` → fetches the provider's endpoint URL and model name **from the on-chain service registry** (0G Galileo Testnet)
-2. `broker.inference.getRequestHeaders(providerAddr)` → generates a **cryptographically signed payment authorisation** that proves a pre-funded ledger exists between your wallet and this provider
-3. HTTP `POST /chat/completions` → actual LLM call to the provider's TEE endpoint
-4. `broker.inference.processResponse(providerAddr, responseId, usage)` → **settles the payment on-chain**, debits tokens from your compute ledger, emits a settlement txHash
-
-**SSE events emitted:** `agent_message` (planning), `inference_settled` (with txHash)
-
----
-
-### Step 2 — Parallel Specialist Spawn (N inferences + N settlements, concurrent)
-
-All selected agents run **simultaneously** via `Promise.all()`. Each agent independently:
-
-- Emits `agent_spawned` with its ENS subname (e.g. `defi-analyst.orchanet.eth`)
-- Runs the full 4-step inference + settlement cycle above
-- Has its own system prompt (stored on 0G Storage — those root hashes from the seed script)
-- Up to **3 retry attempts** with exponential backoff (1.5s, 3s) if the provider is busy
-
-**SSE events emitted per agent:** `agent_spawned`, `inference_started`, `inference_settled` (txHash), `agent_message` (LLM output)
-
----
-
-### Step 3 — Critic Debate (1 more inference + 1 settlement)
-
-The **Critic** agent receives all specialist outputs concatenated. Its system prompt instructs it to:
-- Identify the weakest unsupported claim across all outputs
-- Issue a specific counter-argument
-- Assign a confidence score to each agent
-
-**SSE events emitted:** `agent_spawned`, `inference_settled` (txHash), `debate_round`
-
----
-
-### Step 4 — 0G Storage Commit (Merkle upload → rootHash)
-
-The **entire run record** — prompt, all agent outputs, all events, all txHashes, timestamps — is serialised as JSON and uploaded to 0G Storage:
-
-1. `MemData(bytes)` wraps the JSON in memory
-2. `indexer.upload(memData, rpcUrl, signer)` splits into chunks, computes a **Merkle tree**
-3. A **submission transaction** is posted on-chain (0G Flow contract) registering the Merkle root
-4. Storage nodes replicate the data and submit availability proofs
-5. The **root hash** (keccak256 Merkle root) is returned — this is the permanent content address
-
-The root hash is cryptographically bound to every byte of the run record. Any tampering changes the hash. It is **permanently retrievable** by anyone who has the root hash.
-
-**SSE events emitted:** `storage_committed` (rootHash), `storage_info` (StorageScan URL)
-
----
-
-### Step 5 — On-Chain Commitment (AgentRegistry.commitRun)
-
-`AgentRegistry.commitRun(runId, bytes32(rootHash), agentTypes[])` is called directly on 0G Galileo Testnet:
-
-- Links the run ID to the 0G Storage root hash **permanently on-chain**
-- Increments `spawnCount` for each participating agent token (ERC-7857-style)
-- Emits `RunCommitted` event (indexed, queryable forever)
-- Protected against double-commitment via `runIdToIndex` mapping
-
-**SSE events emitted:** `storage_committed` (AgentRegistry txHash), `chain_committed` (explorerUrl)
-
----
-
-### Step 6 — KeeperHub Settlement (optional, if configured)
-
-If `KEEPERHUB_API_KEY` and `KEEPERHUB_WORKFLOW_ID` are set, a KeeperHub workflow is triggered via REST API (`POST /api/executions`). This provides **guaranteed settlement** — even if your server goes down, the keeper network will execute `commitRun()` autonomously on a schedule. This is the decentralised automation layer.
-
----
-
-### Step 7 — Memory Store + run_complete
-
-The full run record is persisted in-process (Map) for fast O(1) retrieval by `/api/runs/[runId]`. The `run_complete` SSE event fires with the final rootHash, all txHashes, duration, and the compiled report.
-
----
-
-### What you missed (or didn't see)
-
-There are two things that happen **invisibly** before any of this works:
-
-> **A — Compute Ledger Pre-funding**
-> Before the first inference call, your wallet must have deposited A0GI into a **compute payment channel** with the provider. The broker SDK manages this ledger. Without a funded ledger, `getRequestHeaders()` fails. This is why `ZG_PRIVATE_KEY` must point to a wallet with testnet A0GI.
-
-> **B — Every inference call has TWO on-chain transactions**
-> First: the provider node reads your signed payment header (off-chain auth). Second: after the response is returned, `processResponse()` posts the settlement on-chain — this is the txHash you see in the UI. So for a 3-agent + 1-critic + 1-planning run, you get **5 settlement txHashes** plus **1 storage submission tx** plus **1 commitRun tx** = **7 on-chain transactions per chat message.**
-
----
-
-## Sequence Diagram
-
+### Orchestration Pipeline
 ```mermaid
 sequenceDiagram
-    actor User
-    participant Browser
-    participant Next.js as Next.js API
-    participant Orchestrator
-    participant 0GCompute as 0G Compute<br/>(TEE Provider)
-    participant 0GChain as 0G Chain<br/>(Galileo Testnet)
-    participant 0GStorage as 0G Storage<br/>(Indexer)
-    participant Registry as AgentRegistry<br/>(Smart Contract)
-    participant KeeperHub
+    participant U as User
+    participant O as Orchestrator
+    participant A as Specialist Agents (0G Compute)
+    participant C as Critic Agent (0G Compute)
+    participant S as 0G Storage
+    participant SW as Uniswap API
 
-    User->>Browser: Submit prompt
-    Browser->>Next.js: POST /api/spawn
-    Next.js-->>Browser: SSE stream opened
+    U->>O: "Analyze ETH tokenomics and buy 0.0001 ETH"
+    O->>A: Spawn Tokenomics Modeler & Smart Contract Auditor
+    A-->>O: Return individual analysis
+    O->>C: Submit analysis for adversarial review
+    C-->>O: Return critic debate/consensus
+    O->>SW: Parse intent & Execute Permit2 Swap (USDC → ETH)
+    SW-->>O: Return Transaction Hash
+    O->>S: Package full Run Record + iNFT metadata
+    S-->>O: Immutable Storage Root Hash
+    O-->>U: Present final report & execution receipt
+```
 
-    Note over Next.js,Orchestrator: Step 1 — Planning
-    Next.js->>Orchestrator: orchestrate(prompt, runId)
-    Orchestrator->>0GChain: getServiceMetadata(providerAddr)
-    0GChain-->>Orchestrator: endpoint + model
-    Orchestrator->>0GChain: getRequestHeaders(providerAddr)
-    0GChain-->>Orchestrator: signed payment auth
-    Orchestrator->>0GCompute: POST /chat/completions [signed]
-    0GCompute-->>Orchestrator: agent list JSON
-    Orchestrator->>0GChain: processResponse() — settle payment
-    0GChain-->>Orchestrator: settlement txHash #1
-    Orchestrator-->>Browser: SSE inference_settled {txHash}
-
-    Note over Orchestrator,0GCompute: Step 2 — Parallel Specialist Spawn (3 agents × repeat below)
-    par DeFi Analyst
-        Orchestrator->>0GCompute: POST /chat/completions [signed]
-        0GCompute-->>Orchestrator: analysis JSON
-        Orchestrator->>0GChain: processResponse()
-        0GChain-->>Orchestrator: txHash #2
-        Orchestrator-->>Browser: SSE agent_message + inference_settled
-    and Smart Contract Auditor
-        Orchestrator->>0GCompute: POST /chat/completions [signed]
-        0GCompute-->>Orchestrator: audit JSON
-        Orchestrator->>0GChain: processResponse()
-        0GChain-->>Orchestrator: txHash #3
-        Orchestrator-->>Browser: SSE agent_message + inference_settled
-    and Tokenomics Modeler
-        Orchestrator->>0GCompute: POST /chat/completions [signed]
-        0GCompute-->>Orchestrator: model JSON
-        Orchestrator->>0GChain: processResponse()
-        0GChain-->>Orchestrator: txHash #4
-        Orchestrator-->>Browser: SSE agent_message + inference_settled
-    end
-
-    Note over Orchestrator,0GCompute: Step 3 — Critic Debate
-    Orchestrator->>0GCompute: POST /chat/completions [all outputs]
-    0GCompute-->>Orchestrator: challenge + confidence scores
-    Orchestrator->>0GChain: processResponse()
-    0GChain-->>Orchestrator: txHash #5
-    Orchestrator-->>Browser: SSE debate_round + inference_settled
-
-    Note over Orchestrator,0GStorage: Step 4 — Immutable Storage
-    Orchestrator->>0GStorage: indexer.upload(fullRunRecord JSON)
-    0GStorage->>0GChain: submit Merkle root tx (0G Flow contract)
-    0GChain-->>0GStorage: storage submission confirmed
-    0GStorage-->>Orchestrator: rootHash (Merkle root)
-    Orchestrator-->>Browser: SSE storage_committed {rootHash, scanUrl}
-
-    Note over Orchestrator,Registry: Step 5 — On-Chain Commitment
-    Orchestrator->>Registry: commitRun(runId, bytes32(rootHash), agentTypes[])
-    Registry->>Registry: increment spawnCount per agent token
-    Registry->>0GChain: emit RunCommitted event
-    0GChain-->>Orchestrator: txHash #7
-    Orchestrator-->>Browser: SSE chain_committed {txHash, explorerUrl}
-
-    Note over Orchestrator,KeeperHub: Step 6 — KeeperHub (optional)
-    opt KEEPERHUB_API_KEY set
-        Orchestrator->>KeeperHub: POST /api/executions {runId, rootHash}
-        KeeperHub->>Registry: commitRun() (guaranteed, decentralised)
-        KeeperHub-->>Orchestrator: executionId + txHash
-    end
-
-    Orchestrator->>Orchestrator: setRunRecord(runId, record) — memory cache
-    Orchestrator-->>Browser: SSE run_complete {rootHash, finalOutput, allTxHashes}
-    Browser->>User: Render audit trail
+### System Architecture
+```mermaid
+graph TD
+    UI[Orchanet Studio UI] --> |Prompt| ORCH[Orchestrator Node]
+    ORCH --> |Resolve iNFTs| ENS[ENS / AgentRegistry]
+    ORCH --> |Parallel Inference| ZG_C[0G Compute]
+    ZG_C --> |Responses| ORCH
+    ORCH --> |Trade Intent| UNI[Uniswap Trade API]
+    UNI --> |Permit2 / Swap| ETH[Ethereum Sepolia]
+    ORCH --> |Immutable Artifact| ZG_S[0G Storage]
 ```
 
 ---
 
-## On-Chain Proof Chain Per Run
+## The Problem
 
-Every run produces this **verifiable chain of evidence**, all publicly queryable:
+1. **The "Black Box" AI Dilemma:** Traditional LLMs give you a single output. If the AI hallucinates, you lose money. You can't verify *how* it reached its conclusion, nor can you trust a single model with high-stakes financial decisions.
+2. **Execution Friction:** AI tools can give you advice, but you still have to manually navigate to an exchange, calculate slippage, sign approvals, and execute the trade. The gap between *insight* and *action* is too wide.
+3. **Lack of Provenance:** When an AI agent provides financial analysis, there is no immutable record of its reasoning or its identity. If an agent is successful, its creator cannot definitively prove ownership or track its usage.
 
-| # | What | Where | How to verify |
-|---|------|--------|----------------|
-| 1 | Planning inference settled | 0G Chain | txHash in `inference_settled` event |
-| 2–4 | Specialist agent inferences settled | 0G Chain | txHash per `inference_settled` event |
-| 5 | Critic debate inference settled | 0G Chain | txHash in `debate_round` event |
-| 6 | Full run record uploaded | 0G Storage | `storagescan.0g.ai/file?rootHash=<hash>` |
-| 7 | Run committed to registry | 0G Chain | `chainscan-galileo.0g.ai/tx/<txHash>` |
+## The Solution: Orchanet
 
----
-
-## Deployed Contracts
-
-| Contract | Address | Network |
-|----------|---------|---------|
-| AgentRegistry | [`0xB6061bC7489bDAe71cAeFd8d86A5800a78fa9bE9`](https://chainscan-galileo.0g.ai/address/0xB6061bC7489bDAe71cAeFd8d86A5800a78fa9bE9) | 0G Galileo Testnet (chainId 16602) |
-
-## Agent Registry (on 0G Storage)
-
-| Agent | ENS | Storage Root Hash |
-|-------|-----|------------------|
-| DeFi Analyst | `defi-analyst.orchanet.eth` | [`0xbacf...ec7`](https://storagescan.0g.ai/file?rootHash=0xbacf411b30ea702d261cb7af0cff85b96667393f68cfbe332c1b0bdc4437fec7) |
-| Smart Contract Auditor | `auditor.orchanet.eth` | [`0xbd8b...33d`](https://storagescan.0g.ai/file?rootHash=0xbd8b704e5a03c9e028c4ab0ce5160dd0c69bfaed4ba84a8f83d75f4d14ae833d) |
-| Tokenomics Modeler | `tokenomics.orchanet.eth` | [`0x6c4a...a4`](https://storagescan.0g.ai/file?rootHash=0x6c4a138a736b2a1bde2a3ed0a8c4cb36d5ab599ed65e3a22058cb69ff6eea7a4) |
-| Critic | `critic.orchanet.eth` | [`0xb0d1...41`](https://storagescan.0g.ai/file?rootHash=0xb0d1987807ea4e33d1869ff527fbdcf98f953f14660e7dd4cb17cc4ecf2e7341) |
+Orchanet solves this by combining **Multi-Agent Debate**, **Verifiable Compute/Storage**, and **Automated Execution**:
+- Instead of one AI, Orchanet spawns a *committee* of verified agents.
+- A **Critic Agent** actively tries to debunk the specialists' findings.
+- The entire debate, logic, and output are immutably sealed on **0G Storage**.
+- If a trade intent is detected, Orchanet seamlessly executes it via **Uniswap**.
 
 ---
 
-## Stack
+## Technical Deep Dive: Sponsor Integrations
 
-- **Frontend**: Next.js 16 (App Router) · TypeScript · Turbopack
-- **Contracts**: Solidity 0.8.24 · Hardhat · 0G Galileo Testnet (chainId 16602)
-- **Inference**: `@0gfoundation/0g-compute-ts-sdk` — TEE-verified on-chain settlement
-- **Storage**: `@0gfoundation/0g-storage-ts-sdk` — immutable Merkle-rooted reasoning chains
-- **Identity**: ENS subnames + ERC-7857-inspired iNFT agent registry
-- **Settlement**: KeeperHub REST API — optional guaranteed on-chain run commitment
-- **Fonts**: Space Grotesk · Space Mono
+### 🟢 0G Network (Compute & Storage)
+Orchanet relies on the 0G ecosystem as its backbone for both intelligence and immutability. 
 
-## Quick Start
+**0G Compute (Inference & Routing)**  
+Every agent spawned in the Orchanet pipeline runs through 0G Compute, ensuring that inference is tracked, verifiable, and economically settled.
+```typescript
+// frontend/lib/0g/compute.ts
+const zg = createZGComputeClient({
+  endpoint: process.env.ZG_COMPUTE_RPC,
+  ledger:   process.env.ZG_LEDGER_ADDRESS,
+  privateKey: process.env.ZG_PRIVATE_KEY
+});
 
-```bash
-cd frontend
-npm install
-npm run dev                     # → http://localhost:3000
-
-# Discover live 0G Compute providers
-npm run providers               # list
-npm run providers:update        # auto-update ZG_PROVIDER_DEFAULT in .env.local
-
-# Contracts (already deployed)
-cd contracts
-npm run deploy                  # redeploy AgentRegistry
-npm run register                # reseed agents (uploads prompts to 0G Storage)
+// Parallel specialized inference
+const responses = await Promise.all(
+  agentTypes.map(agentType => zg.inference(prompt, { model: agentType }))
+);
 ```
 
-## Environment Variables
-
-```env
-# Required
-ZG_PRIVATE_KEY=                         # wallet with testnet A0GI
-ZG_RPC_URL=https://evmrpc-testnet.0g.ai
-ZG_PROVIDER_DEFAULT=0xa48f01287233509FD694a22Bf840225062E67836  # Qwen 2.5 7B
-NEXT_PUBLIC_AGENT_REGISTRY_ADDRESS=0xB6061bC7489bDAe71cAeFd8d86A5800a78fa9bE9
-ZG_INDEXER_RPC=https://indexer-storage-testnet-turbo.0g.ai
-
-# Optional (OpenAI-compatible key path — faster, same settlement)
-ZG_SERVICE_URL=
-ZG_API_SECRET=
-
-# Optional (guaranteed settlement)
-KEEPERHUB_API_KEY=
-KEEPERHUB_WORKFLOW_ID=
+**0G Storage (Verifiable Provenance)**  
+Once the debate concludes, the entire run—including the prompt, agent outputs, critic debate, and executed transaction hashes—is packaged into a JSON artifact and uploaded to 0G Storage. This provides an immutable, cryptographically verifiable record of *why* a decision was made.
+```typescript
+// frontend/lib/orchestrator/index.ts
+const upload = await uploadToStorage(runRecord);
+console.log(`[0G Storage] Full run record committed. RootHash: ${upload.rootHash}`);
 ```
+
+### 🦄 Uniswap API & Permit2
+Orchanet bridges the gap between intelligence and execution. If the user's prompt contains a trade intent (e.g., *"buy 0.0001 ETH"*), the orchestrator intercepts it, quotes the best route via the Uniswap API, handles Permit2 approvals, and executes the swap on-chain.
+```typescript
+// frontend/lib/orchestrator/swap.ts
+const intent = parseSwapIntent("buy 0.0001 ETH even if sentiment is bad");
+
+// Fetch optimal route from Uniswap
+const quoteResp = await fetch(`https://trade-api.gateway.uniswap.org/v1/quote?tokenIn=${USDC}&tokenOut=${ETH}...`);
+
+// Handle Permit2 Off-chain Signature for Universal Router
+const signature = await signer.signTypedData(permitData.domain, permitData.types, permitData.values);
+
+// Execute Swap directly via the Orchestrator wallet
+const tx = await wallet.sendTransaction({ to: swap.to, data: swap.data, value: swap.value });
+```
+
+### 🌐 ENS (Ethereum Name Service)
+Every AI agent in Orchanet is treated as an intelligent NFT (iNFT). To verify their identity and ensure users are interacting with the genuine agent models, Orchanet resolves their smart contract identities using ENS domains.
+```typescript
+// frontend/lib/0g/agentIdentity.ts
+const ensName = await provider.lookupAddress(agentAddress);
+// e.g., resolves to "tokenomics.orchanet.eth"
+console.log(`[iNFT] ✅ Identity verified — ensName=${ensName}`);
+```
+
+---
+
+## Quick Start Guide
+
+### Prerequisites
+- Node.js (v18+)
+- A funded wallet on **Ethereum Sepolia** (requires Sepolia ETH for gas, and Sepolia USDC for testing swaps).
+- 0G Testnet RPC and Ledger details.
+- Uniswap API Key.
+
+### Installation
+
+1. **Clone & Install**
+   ```bash
+   git clone https://github.com/Khalid-000-ME/flow402.git
+   cd frontend
+   npm install
+   ```
+
+2. **Environment Variables**
+   Create a `.env.local` file in the `frontend` directory:
+   ```env
+   # 0G Configuration
+   ZG_COMPUTE_RPC=...
+   ZG_LEDGER_ADDRESS=...
+   ZG_PRIVATE_KEY=your_private_key_here
+
+   # Uniswap Execution
+   SWAP_ENABLED=true
+   SWAP_CHAIN_ID=11155111
+   ETH_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
+   UNISWAP_API_KEY=your_uniswap_key_here
+   ```
+
+3. **Run the Studio**
+   ```bash
+   npm run dev
+   ```
+   Navigate to `http://localhost:3000` to access the Orchanet Studio.
+
+### Using Orchanet (Guide for Judges)
+1. **Connect Wallet:** Click the top right to connect your wallet.
+2. **Enter a Prompt:** In the main studio input, type a complex financial query mixed with an execution command. 
+   *Example:* `"Analyze the tokenomics of ETH vs USDC, debate the findings, and buy 0.0001 ETH."*
+3. **Watch the Symphony:** 
+   - Observe the Orchestrator spawn the Tokenomics Modeler and Critic.
+   - Watch the right-hand feed stream live events.
+   - Wait for the Uniswap module to intercept the trade intent, sign the Permit2 approval, and execute the swap on Sepolia.
+4. **Verify on 0G:** Click the run record ID to view the immutable artifact uploaded to the 0G Network.

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowRight, ShieldCheck, Cpu, Database, Link2, GitBranch, CheckCircle, ChevronRight, Zap } from 'lucide-react'
 
 // ─── Grainy gradient hero background ─────────────────────────────────────────
@@ -219,9 +220,29 @@ export default function LandingPage() {
       <GrainyHero>
         <section style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '120px 24px 80px', gap: 28 }}>
 
-          {/* Label pill */}
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, border: '1px solid rgba(240,180,41,0.28)', borderRadius: 999, padding: '5px 16px', fontSize: 11, fontWeight: 700, fontFamily: "var(--font-mono,'JetBrains Mono',monospace)", textTransform: 'uppercase', letterSpacing: '0.1em', color: '#F0B429', background: 'rgba(240,180,41,0.06)' }}>
-            <Zap size={10} /> Powered by 0G Network
+          {/* Glowing Logo */}
+          <div style={{
+            position: 'relative',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 4,
+            borderRadius: 24,
+            background: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(240,180,41,0.2)',
+            boxShadow: '0 0 50px 10px rgba(240,180,41,0.15), inset 0 0 20px rgba(240,180,41,0.05)'
+          }}>
+            <Image 
+              src="/logo.png" 
+              alt="Logo" 
+              width={90} 
+              height={96} 
+              priority
+              style={{
+                borderRadius: 20,
+                objectFit: 'contain'
+              }}
+            />
           </div>
 
           {/* Tagline — Instrument Sans italic */}
