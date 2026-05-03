@@ -6,6 +6,12 @@ export const metadata: Metadata = {
   description: 'Browse, register, and manage autonomous agents on the Orcha-net decentralized orchestration network.',
 }
 
+import { Suspense } from 'react'
+
 export default function Page() {
-  return <MarketplacePage />
+  return (
+    <Suspense fallback={<div>Loading marketplace...</div>}>
+      <MarketplacePage />
+    </Suspense>
+  )
 }
