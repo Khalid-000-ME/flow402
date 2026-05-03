@@ -255,12 +255,12 @@ export default function LandingPage() {
             lineHeight: 1.06,
             maxWidth: 860,
           }}>
-            Verifiable Intelligence.<br />
-            <span style={{ color: '#F0B429' }}>Seamless Execution.</span>
+            Spawn High-Performance Agents.<br />
+            <span style={{ color: '#F0B429' }}>Execute Trustless Inference.</span>
           </h1>
 
           <p style={{ fontSize: 'clamp(14px,1.8vw,17px)', color: '#737373', maxWidth: 540, lineHeight: 1.8 }}>
-            Transform natural language into autonomous on-chain action. Orchestrate a verifiable multi-agent committee backed by the 0G Network.
+            Spawn a committee of specialized agents delivering high-quality, parallel inference. Turn trustless intelligence into autonomous, verifiable on-chain execution.
           </p>
 
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
