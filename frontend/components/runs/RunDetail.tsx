@@ -7,20 +7,15 @@ import {
   Download,
   ExternalLink,
   CheckCircle2,
+  Play,
 } from 'lucide-react'
 import TxHashLink from '@/components/shared/TxHashLink'
 import StatusPill from '@/components/shared/StatusPill'
+import AgentResponseCard from '@/components/shared/AgentResponseCard'
 
-const AGENT_COLORS: Record<string, string> = {
-  Orchestrator: '#7C3AED',
-  'DeFi Analyst': '#2563EB',
-  'Smart Contract Auditor': '#DC2626',
-  'Tokenomics Modeler': '#0891B2',
-  Critic: '#EA580C',
-  Storage: '#0D9488',
-  KeeperHub: '#16A34A',
-  System: '#6B7280',
-}
+const NEUTRAL_COLOR  = 'rgba(255,255,255,0.55)'
+const NEUTRAL_BG     = 'rgba(255,255,255,0.06)'
+const NEUTRAL_BORDER = 'rgba(255,255,255,0.14)'
 
 interface RunEvent {
   type: string
@@ -162,6 +157,17 @@ export default function RunDetail({ runId }: { runId: string }) {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
               <StatusPill status={run.status as Parameters<typeof StatusPill>[0]['status'] ?? 'complete'} />
+
+              {/* Open run in Spawn Studio */}
+              <Link
+                href={`/spawn?runId=${runId}`}
+                className="btn btn-secondary"
+                style={{ fontSize: 12, padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 6 }}
+              >
+                <Play size={11} /> Open in Studio
+              </Link>
+
+              {/* Download run record */}
               {downloadHref && (
                 <a
                   href={downloadHref}
@@ -169,8 +175,7 @@ export default function RunDetail({ runId }: { runId: string }) {
                   className="btn btn-secondary"
                   style={{ fontSize: 12, padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 6 }}
                 >
-                  <Download size={12} />
-                  Download
+                  <Download size={12} /> Download
                 </a>
               )}
             </div>
@@ -194,14 +199,20 @@ export default function RunDetail({ runId }: { runId: string }) {
               {run.rootHash && (
                 <div style={{ padding: '8px 0', borderBottom: '1px solid var(--border-subtle)' }}>
                   <Label>Artifact</Label>
-                  <div style={{ marginTop: 6 }}>
-                    <code style={{
-                      fontSize: 10, fontFamily: 'var(--font-mono)', color: '#2DD4BF',
-                      background: 'rgba(13,148,136,0.10)', border: '1px solid rgba(13,148,136,0.2)',
-                      padding: '2px 7px', borderRadius: 4, display: 'inline-block',
-                    }}>
+                  <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <a
+                      href={`/api/runs/${runId}/download`}
+                      download={`run-${runId.slice(0, 8)}.json`}
+                      style={{
+                        fontSize: 10, fontFamily: 'var(--font-mono)', color: '#2DD4BF',
+                        background: 'rgba(13,148,136,0.10)', border: '1px solid rgba(13,148,136,0.2)',
+                        padding: '3px 8px', borderRadius: 4, textDecoration: 'none',
+                        display: 'inline-flex', alignItems: 'center', gap: 5,
+                      }}
+                    >
+                      <Download size={9} />
                       {run.rootHash.slice(0, 10)}…{run.rootHash.slice(-6)}
-                    </code>
+                    </a>
                   </div>
                 </div>
               )}
@@ -243,91 +254,49 @@ export default function RunDetail({ runId }: { runId: string }) {
 
             {timeline.map((evt, i) => {
               const agentType = evt.agentType ?? 'System'
-              const color = AGENT_COLORS[agentType] ?? '#6B7280'
               const isStorage = evt.type === 'storage_committed' || evt.type === 'chain_committed'
 
-              return (
-                <div
-                  key={i}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '3px 1fr',
-                    gap: '0 14px',
-                    position: 'relative',
-                  }}
-                >
-                  {/* Left accent line */}
-                  <div style={{
-                    background: isStorage ? '#2DD4BF' : color,
-                    borderRadius: 2,
-                    opacity: 0.6,
-                    minHeight: 40,
-                    marginBottom: 4,
-                  }} />
+              // Agent message / debate: use rich card
+              if ((evt.type === 'agent_message' || evt.type === 'debate_round') && evt.content) {
+                return (
+                  <AgentResponseCard
+                    key={i}
+                    agentType={agentType}
+                    agentColor={NEUTRAL_COLOR}
+                    content={evt.content}
+                    eventLabel={eventLabel(evt.type)}
+                    timestamp={evt.timestamp}
+                    teeVerified={evt.teeVerified}
+                    txHash={evt.txHash}
+                    rootHash={evt.rootHash}
+                    runId={runId}
+                  />
+                )
+              }
 
-                  {/* Event body */}
-                  <div style={{
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 8,
-                    padding: '10px 14px',
-                    marginBottom: 4,
-                  }}>
-                    {/* Header row */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: evt.content ? 8 : 0 }}>
-                      {/* Agent avatar */}
-                      <span style={{
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                        width: 20, height: 20, borderRadius: '50%',
-                        background: `${color}20`, border: `1px solid ${color}50`,
-                        fontSize: 9, fontWeight: 800, color, fontFamily: 'var(--font-mono)',
-                        flexShrink: 0,
-                      }}>
-                        {agentType.charAt(0)}
-                      </span>
-                      <span style={{ fontSize: 11, fontWeight: 700, color }}>{agentType}</span>
-                      <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>
-                        {eventLabel(evt.type)}
-                      </span>
-                      <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+
+              return (
+                <div key={i} style={{ display: 'grid', gridTemplateColumns: '3px 1fr', gap: '0 14px' }}>
+                  <div style={{ background: isStorage ? 'rgba(45,212,191,0.5)' : NEUTRAL_BORDER, borderRadius: 2, minHeight: 36, marginBottom: 4 }} />
+                  <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, padding: '8px 14px', marginBottom: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: NEUTRAL_COLOR }}>{agentType}</span>
+                      <span style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>{eventLabel(evt.type)}</span>
+                      <span style={{ marginLeft: 'auto', fontSize: 9.5, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                         {new Date(evt.timestamp).toLocaleTimeString()}
                       </span>
-                      {evt.teeVerified === true && (
-                        <span style={{
-                          fontSize: 9, fontFamily: 'var(--font-mono)', color: '#4ADE80',
-                          background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)',
-                          borderRadius: 3, padding: '1px 5px',
-                          display: 'inline-flex', alignItems: 'center', gap: 3,
-                        }}>
-                          <CheckCircle2 size={8} /> TEE
-                        </span>
-                      )}
                     </div>
-
-                    {/* Content */}
-                    {evt.content && (
-                      <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.65, margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                        {evt.content.length > 420 ? evt.content.slice(0, 420) + '…' : evt.content}
-                      </p>
-                    )}
-
-                    {/* Hashes */}
-                    {(evt.rootHash || (evt.txHash?.startsWith('0x'))) && (
-                      <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                    {(evt.rootHash || evt.txHash?.startsWith('0x')) && (
+                      <div style={{ display: 'flex', gap: 6, marginTop: 7, flexWrap: 'wrap' }}>
                         {evt.txHash?.startsWith('0x') && <TxHashLink hash={evt.txHash} chain="0g" />}
                         {evt.rootHash && (
                           <a
-                            href={`/api/storage/download?rootHash=${encodeURIComponent(evt.rootHash)}`}
+                            href={`/api/runs/${runId}/download`}
                             download
-                            style={{
-                              fontSize: 10, fontFamily: 'var(--font-mono)', color: '#2DD4BF',
-                              background: 'rgba(13,148,136,0.10)', border: '1px solid rgba(13,148,136,0.2)',
-                              padding: '2px 7px', borderRadius: 4, textDecoration: 'none',
-                              display: 'inline-flex', alignItems: 'center', gap: 4,
-                            }}
+                            style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: '#2DD4BF', background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.18)', borderRadius: 6, padding: '2px 8px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
                             title={evt.rootHash}
                           >
-                            <Download size={9} /> {evt.rootHash.slice(0, 8)}…
+                            Root: {evt.rootHash.slice(0,10)}…{evt.rootHash.slice(-6)}
                           </a>
                         )}
                       </div>
