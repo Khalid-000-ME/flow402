@@ -1,4 +1,4 @@
-# Orchanet 🌐
+# Orchanet
 
 > **Decentralized AI Orchestration. Verifiable Intelligence. Seamless Execution.**
 
