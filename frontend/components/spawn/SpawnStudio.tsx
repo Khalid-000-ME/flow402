@@ -140,11 +140,144 @@ function FeedRow({ evt }: { evt: ChatEvent }) {
     )
   }
 
+  if (evt.type === 'chain_committed') {
+    const txHash = typeof evt.data.txHash === 'string' && (evt.data.txHash as string).startsWith('0x')
+      ? evt.data.txHash as string
+      : null
+    if (!txHash) return null
+    return (
+      <div style={{ padding: '5px 10px 5px 14px', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', borderLeft: '2px solid rgba(240,180,41,0.3)', marginLeft: 8 }}>
+        <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: ACCENT }}>On-chain</span>
+        <span style={{ fontSize: 9, color: TEXT_MUTED }}>AgentRegistry.commitRun</span>
+        <a
+          href={`https://chainscan-galileo.0g.ai/tx/${txHash}`}
+          target="_blank" rel="noopener noreferrer"
+          style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: ACCENT, background: 'rgba(240,180,41,0.10)', border: '1px solid rgba(240,180,41,0.28)', borderRadius: 6, padding: '2px 9px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3, fontWeight: 600 }}
+        >
+          <ExternalLink size={9} />
+          {txHash.slice(0, 10)}…{txHash.slice(-6)}
+        </a>
+      </div>
+    )
+  }
+
+  if (evt.type === 'fee_distributed') {
+    const amountOG  = evt.data.amountOG  as string | undefined
+    const owner     = evt.data.owner     as string | undefined
+    const simulated = evt.data.simulated === true
+    const agentType = (evt.data.agentType as string | undefined) ?? evt.type
+    return (
+      <div style={{ padding: '4px 10px 4px 14px', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', opacity: simulated ? 0.72 : 1 }}>
+        {simulated
+          ? <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.3)', border: '1px dashed rgba(255,255,255,0.15)', borderRadius: 4, padding: '0 5px' }}>Fee · Pending</span>
+          : <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: GREEN }}>Fee Out</span>
+        }
+        {agentType && <span style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.55)' }}>{agentType}</span>}
+        {amountOG && <span style={{ fontSize: 9.5, fontFamily: 'var(--font-mono)', color: simulated ? 'rgba(255,255,255,0.3)' : GREEN, background: simulated ? 'rgba(255,255,255,0.04)' : 'rgba(74,222,128,0.08)', border: `1px solid ${simulated ? 'rgba(255,255,255,0.1)' : 'rgba(74,222,128,0.2)'}`, borderRadius: 6, padding: '1px 6px' }}>{amountOG} OG</span>}
+        {owner && owner !== 'unregistered' && <code style={{ fontSize: 9, color: TEXT_MUTED }}>→ {owner.slice(0, 8)}…{owner.slice(-4)}</code>}
+        {simulated && <span style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' }}>deploy vault to activate</span>}
+      </div>
+    )
+  }
+
+  if (evt.type === 'vault_credited') {
+    const txHash      = typeof evt.data.txHash === 'string' && (evt.data.txHash as string).startsWith('0x') ? evt.data.txHash as string : null
+    const totalFeeOG  = evt.data.totalFeeOG  as string | undefined
+    const agentCount  = evt.data.agentCount  as number | undefined
+    const vaultAddr   = evt.data.vaultAddress as string | undefined
+    return (
+      <div style={{ padding: '6px 10px 6px 14px', display: 'flex', flexDirection: 'column', gap: 4, borderLeft: '2px solid rgba(45,212,191,0.4)', marginLeft: 8, background: 'rgba(45,212,191,0.04)', borderRadius: '0 8px 8px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: TEAL }}>Vault Paid Out</span>
+          {totalFeeOG && <span style={{ fontSize: 9.5, fontFamily: 'var(--font-mono)', color: TEAL, background: 'rgba(45,212,191,0.10)', border: '1px solid rgba(45,212,191,0.25)', borderRadius: 6, padding: '1px 7px' }}>{totalFeeOG} OG</span>}
+          {agentCount && <span style={{ fontSize: 9, color: TEXT_MUTED }}>{agentCount} agent{agentCount > 1 ? 's' : ''}</span>}
+          {txHash && (
+            <a
+              href={`https://chainscan-galileo.0g.ai/tx/${txHash}`}
+              target="_blank" rel="noopener noreferrer"
+              style={{ fontSize: 9.5, fontFamily: 'var(--font-mono)', color: ACCENT, background: 'rgba(240,180,41,0.10)', border: '1px solid rgba(240,180,41,0.28)', borderRadius: 6, padding: '2px 9px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3, fontWeight: 600 }}
+            >
+              <ExternalLink size={9} /> {txHash.slice(0, 10)}…{txHash.slice(-6)}
+            </a>
+          )}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          {vaultAddr && (
+            <code style={{ fontSize: 8.5, color: TEXT_MUTED, fontFamily: 'var(--font-mono)' }}>vault: {vaultAddr.slice(0, 10)}…{vaultAddr.slice(-6)}</code>
+          )}
+          {txHash && (
+            <a
+              href={`https://chainscan-galileo.0g.ai/tx/${txHash}#internal`}
+              target="_blank" rel="noopener noreferrer"
+              style={{ fontSize: 8, color: TEXT_MUTED, textDecoration: 'underline', textDecorationColor: 'rgba(255,255,255,0.15)' }}
+            >
+              view internal transfers ↗
+            </a>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  if (evt.type === 'swap_executed') {
+    const success    = evt.data.success !== false
+    const tokenIn    = evt.data.tokenIn   as string | undefined
+    const tokenOut   = evt.data.tokenOut  as string | undefined
+    const amountIn   = evt.data.amountIn  as string | undefined
+    const amountOut  = evt.data.amountOut as string | undefined
+    const txHash     = typeof evt.data.txHash === 'string' && (evt.data.txHash as string).startsWith('0x') ? evt.data.txHash as string : null
+    const explorerUrl = evt.data.explorerUrl as string | undefined
+    const routing    = evt.data.routing   as string | undefined
+    const errMsg     = evt.data.error     as string | undefined
+    const chainId    = evt.data.chainId   as string | undefined
+
+    const SWAP_GREEN = '#34d399'
+    const SWAP_RED   = '#f87171'
+    const color      = success ? SWAP_GREEN : SWAP_RED
+
+    return (
+      <div style={{ padding: '6px 10px 6px 14px', display: 'flex', flexDirection: 'column', gap: 4, borderLeft: `2px solid ${success ? 'rgba(52,211,153,0.45)' : 'rgba(248,113,113,0.4)'}`, marginLeft: 8, background: success ? 'rgba(52,211,153,0.04)' : 'rgba(248,113,113,0.04)', borderRadius: '0 8px 8px 0' }}>
+        {/* Header row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color }}>
+            {success ? '⇄ Swap Executed' : '⇄ Swap Failed'}
+          </span>
+          {tokenIn && tokenOut && (
+            <span style={{ fontSize: 9.5, fontFamily: 'var(--font-mono)', color: 'rgba(255,255,255,0.75)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6, padding: '1px 7px' }}>
+              {amountIn} {tokenIn} → {amountOut && amountOut !== '0' ? `${amountOut} ` : ''}{tokenOut}
+            </span>
+          )}
+          {routing && (
+            <span style={{ fontSize: 8, fontWeight: 600, textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, padding: '0 5px' }}>
+              {routing}
+            </span>
+          )}
+          {(explorerUrl || txHash) && (
+            <a
+              href={explorerUrl ?? `https://etherscan.io/tx/${txHash}`}
+              target="_blank" rel="noopener noreferrer"
+              style={{ fontSize: 9.5, fontFamily: 'var(--font-mono)', color: ACCENT, background: 'rgba(240,180,41,0.10)', border: '1px solid rgba(240,180,41,0.28)', borderRadius: 6, padding: '2px 9px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3, fontWeight: 600 }}
+            >
+              <ExternalLink size={9} /> {txHash ? `${txHash.slice(0, 10)}…${txHash.slice(-6)}` : 'view tx'}
+            </a>
+          )}
+        </div>
+        {/* Error / meta row */}
+        {errMsg && (
+          <code style={{ fontSize: 8.5, color: SWAP_RED, fontFamily: 'var(--font-mono)', opacity: 0.8 }}>{errMsg.slice(0, 160)}</code>
+        )}
+        {chainId && (
+          <span style={{ fontSize: 8.5, color: TEXT_MUTED }}>chain {chainId}{chainId === '1' ? ' (Ethereum)' : chainId === '8453' ? ' (Base)' : chainId === '42161' ? ' (Arbitrum)' : ''}</span>
+        )}
+      </div>
+    )
+  }
+
   return null
 }
 
 // ── Feed event filter ─────────────────────────────────────────────────────────
-const FEED_TYPES = new Set(['agent_message', 'debate_round', 'inference_settled', 'storage_committed', 'run_error'])
+const FEED_TYPES = new Set(['agent_message', 'debate_round', 'inference_settled', 'storage_committed', 'chain_committed', 'fee_distributed', 'vault_credited', 'swap_executed', 'run_error'])
 
 // ── Main Studio ───────────────────────────────────────────────────────────────
 
@@ -158,8 +291,45 @@ export default function SpawnStudio() {
   const [expandedFeedId, setExpandedFeedId] = useState<string | null>(null)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
 
+  // Swap panel state
+  const [swapOpen, setSwapOpen]         = useState(false)
+  const [swapAmount, setSwapAmount]     = useState('0.0001')
+  const [swapTokenIn, setSwapTokenIn]   = useState('ETH')
+  const [swapTokenOut, setSwapTokenOut] = useState('USDC')
+  const [swapLoading, setSwapLoading]   = useState(false)
+
   const feedRef  = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const dividerRef = useRef<HTMLDivElement>(null)
+  const [leftWidth, setLeftWidth] = useState(264)
+  const isDragging = useRef(false)
+  const dragStartX = useRef(0)
+  const dragStartW = useRef(0)
+
+  const onDividerMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    isDragging.current = true
+    dragStartX.current = e.clientX
+    dragStartW.current = leftWidth
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+
+    const onMove = (me: MouseEvent) => {
+      if (!isDragging.current) return
+      const delta = me.clientX - dragStartX.current
+      const next  = Math.max(180, Math.min(520, dragStartW.current + delta))
+      setLeftWidth(next)
+    }
+    const onUp = () => {
+      isDragging.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }, [leftWidth])
 
   const { address, connected, connect } = useWallet()
   const [balance, setBalance] = useState<string | null>(null)
@@ -233,6 +403,7 @@ export default function SpawnStudio() {
     setSelectedNodeId(null)
 
     const eventsAcc: ChatEvent[] = []
+    const seenFingerprints = new Set<string>() // dedup guard
     let   nodesAcc:  FlowNode[]  = []
     let   runIdAcc   = ''
 
@@ -272,10 +443,14 @@ export default function SpawnStudio() {
                 timestamp: Date.now(),
               }
 
-              // Track in accumulator for persistence
+              // Track in accumulator — deduplicate by fingerprint
               if (FEED_TYPES.has(ev)) {
-                eventsAcc.push(evt)
-                setEvents([...eventsAcc])
+                const fp = `${ev}|${String(p.txHash ?? '')}|${String(p.agentType ?? '')}|${String(p.amountOG ?? '')}`
+                if (!seenFingerprints.has(fp)) {
+                  seenFingerprints.add(fp)
+                  eventsAcc.push(evt)
+                  setEvents([...eventsAcc])
+                }
               }
 
               // ── Node state machine ────────────────────────────────────
@@ -342,6 +517,37 @@ export default function SpawnStudio() {
 
   const feedEvents = events.filter(e => FEED_TYPES.has(e.type))
 
+  // Swap handler — calls /api/execute-swap and appends result to feed
+  const handleSwap = useCallback(async () => {
+    if (swapLoading || !swapAmount.trim() || !swapTokenOut) return
+    setSwapLoading(true)
+    try {
+      const res  = await fetch('/api/execute-swap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tokenIn: swapTokenIn, tokenOut: swapTokenOut, amountIn: swapAmount }),
+      })
+      const data = await res.json() as Record<string, string | number | boolean>
+      const evt: ChatEvent = {
+        id:        crypto.randomUUID(),
+        type:      'swap_executed',
+        data:      { ...data, tokenIn: swapTokenIn, tokenOut: swapTokenOut, amountIn: swapAmount } as Record<string, string | number | boolean>,
+        timestamp: Date.now(),
+      }
+      setEvents(prev => [...prev, evt])
+    } catch (err) {
+      const evt: ChatEvent = {
+        id:        crypto.randomUUID(),
+        type:      'swap_executed',
+        data:      { success: false, error: String(err), tokenIn: swapTokenIn, tokenOut: swapTokenOut, amountIn: swapAmount } as unknown as Record<string, string | number | boolean>,
+        timestamp: Date.now(),
+      }
+      setEvents(prev => [...prev, evt])
+    } finally {
+      setSwapLoading(false)
+    }
+  }, [swapLoading, swapAmount, swapTokenIn, swapTokenOut])
+
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-primary)', paddingTop: 64 }}>
 
@@ -398,7 +604,7 @@ export default function SpawnStudio() {
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
         {/* Left feed */}
-        <div style={{ width: 264, flexShrink: 0, borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', background: 'var(--bg-secondary)' }}>
+        <div style={{ width: leftWidth, flexShrink: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg-secondary)', position: 'relative' }}>
           <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 7 }}>
             <span style={{ fontSize: 9.5, fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Feed</span>
             {feedEvents.length > 0 && (
@@ -432,7 +638,89 @@ export default function SpawnStudio() {
               </div>
             ))}
           </div>
+
+          {/* Swap Panel — appears only after run completes */}
+          {complete && (
+            <div style={{ flexShrink: 0, borderTop: '1px solid var(--border)' }}>
+              {/* Toggle header */}
+              <button
+                onClick={() => setSwapOpen(p => !p)}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 12px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span>⇄</span> Execute Swap
+                </span>
+                <span style={{ fontSize: 9, opacity: 0.5 }}>{swapOpen ? '▲' : '▼'}</span>
+              </button>
+
+              {swapOpen && (
+                <div style={{ padding: '0 10px 10px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+                  {/* Token pair row */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {/* Amount + tokenIn */}
+                    <input
+                      type="number"
+                      value={swapAmount}
+                      onChange={e => setSwapAmount(e.target.value)}
+                      step="0.0001"
+                      min="0"
+                      style={{ width: 88, fontSize: 12, fontFamily: 'var(--font-mono)', padding: '5px 8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6, color: '#fff', outline: 'none' }}
+                    />
+                    <select
+                      value={swapTokenIn}
+                      onChange={e => setSwapTokenIn(e.target.value)}
+                      style={{ fontSize: 11, fontWeight: 700, padding: '5px 7px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6, color: '#fff', cursor: 'pointer', outline: 'none' }}
+                    >
+                      <option>ETH</option>
+                      <option>WETH</option>
+                      <option>USDC</option>
+                      <option>DAI</option>
+                    </select>
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>→</span>
+                    <select
+                      value={swapTokenOut}
+                      onChange={e => setSwapTokenOut(e.target.value)}
+                      style={{ flex: 1, fontSize: 11, fontWeight: 700, padding: '5px 7px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6, color: '#fff', cursor: 'pointer', outline: 'none' }}
+                    >
+                      <option>USDC</option>
+                      <option>DAI</option>
+                      <option>WETH</option>
+                      <option>UNI</option>
+                    </select>
+                  </div>
+                  {/* Execute button + chain badge */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button
+                      onClick={handleSwap}
+                      disabled={swapLoading || !swapAmount}
+                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '7px 12px', fontSize: 11.5, fontWeight: 700, background: swapLoading ? 'rgba(52,211,153,0.08)' : 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.3)', borderRadius: 7, color: '#34d399', cursor: swapLoading ? 'wait' : 'pointer', transition: 'background 0.15s' }}
+                    >
+                      {swapLoading
+                        ? <><div className="loading-spinner" style={{ width: 11, height: 11 }} /> Executing…</>
+                        : <>⇄ Swap on Sepolia</>}
+                    </button>
+                    <span style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.2)', whiteSpace: 'nowrap' }}>chain 11155111</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
+
+        {/* Drag handle */}
+        <div
+          ref={dividerRef}
+          onMouseDown={onDividerMouseDown}
+          style={{
+            width: 5, flexShrink: 0, cursor: 'col-resize',
+            background: 'transparent',
+            borderRight: '1px solid var(--border)',
+            transition: 'background 0.12s',
+            position: 'relative', zIndex: 10,
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(240,180,41,0.15)')}
+          onMouseLeave={e => { if (!isDragging.current) e.currentTarget.style.background = 'transparent' }}
+        />
 
         {/* Center graph + detail overlay */}
         <div

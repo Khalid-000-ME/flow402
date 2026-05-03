@@ -27,6 +27,10 @@ interface RunEvent {
   round?: number
   timestamp: number
   teeVerified?: boolean
+  owner?: string
+  amountOG?: string
+  error?: string
+  simulated?: boolean
 }
 
 interface RunRecord {
@@ -69,15 +73,17 @@ function MetaRow({ label, value }: { label: string; value: React.ReactNode }) {
 // Event type → short human label
 function eventLabel(type: string) {
   const map: Record<string, string> = {
-    agent_spawned: 'Spawned',
+    agent_spawned:     'Spawned',
     inference_started: 'Inference',
     inference_settled: 'Settled',
-    agent_message: 'Message',
-    debate_round: 'Debate',
+    agent_message:     'Message',
+    debate_round:      'Debate',
     storage_committed: 'Stored',
-    chain_committed: 'On-chain',
-    run_started: 'Started',
-    run_complete: 'Complete',
+    chain_committed:   'On-chain',
+    fee_distributed:   'Fee Paid',
+    vault_credited:    'Vault Credited',
+    run_started:       'Started',
+    run_complete:      'Complete',
   }
   return map[type] ?? type.replace(/_/g, ' ')
 }
@@ -89,6 +95,8 @@ function isSignificant(evt: RunEvent) {
     evt.type === 'debate_round' ||
     evt.type === 'storage_committed' ||
     evt.type === 'chain_committed' ||
+    evt.type === 'fee_distributed' ||
+    evt.type === 'vault_credited' ||
     (evt.type === 'inference_settled' && evt.teeVerified === true)
   )
 }
@@ -274,6 +282,77 @@ export default function RunDetail({ runId }: { runId: string }) {
                 )
               }
 
+              // Fee distribution: green payment row (or dashed pending if simulated)
+              if (evt.type === 'fee_distributed') {
+                const txHash = evt.txHash?.startsWith('0x') ? evt.txHash : null
+                const sim    = evt.simulated === true
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0 5px 4px', flexWrap: 'wrap', opacity: sim ? 0.65 : 1 }}>
+                    <span style={{ width: 3, height: 3, borderRadius: '50%', background: sim ? 'rgba(255,255,255,0.3)' : '#4ADE80', flexShrink: 0 }} />
+                    {sim
+                      ? <span style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.35)', fontWeight: 600, border: '1px dashed rgba(255,255,255,0.2)', borderRadius: 4, padding: '0 5px' }}>Fee · Pending</span>
+                      : <span style={{ fontSize: 10.5, color: '#4ADE80', fontWeight: 600 }}>Fee Paid</span>
+                    }
+                    <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{evt.agentType}</span>
+                    {evt.amountOG && (
+                      <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: sim ? 'rgba(255,255,255,0.3)' : '#4ADE80', background: sim ? 'rgba(255,255,255,0.04)' : 'rgba(74,222,128,0.08)', border: `1px solid ${sim ? 'rgba(255,255,255,0.1)' : 'rgba(74,222,128,0.2)'}`, borderRadius: 6, padding: '1px 7px' }}>
+                        {evt.amountOG} OG
+                      </span>
+                    )}
+                    {evt.owner && evt.owner !== 'unregistered' && (
+                      <code style={{ fontSize: 9.5, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+                        → {evt.owner.slice(0, 8)}…{evt.owner.slice(-4)}
+                      </code>
+                    )}
+                    {txHash && (
+                      <a
+                        href={`https://chainscan-galileo.0g.ai/tx/${txHash}`}
+                        target="_blank" rel="noopener noreferrer"
+                        style={{ fontSize: 9.5, fontFamily: 'var(--font-mono)', color: 'var(--yellow)', background: 'rgba(240,180,41,0.08)', border: '1px solid rgba(240,180,41,0.2)', borderRadius: 6, padding: '1px 7px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3 }}
+                      >
+                        <ExternalLink size={8} /> {txHash.slice(0, 10)}…{txHash.slice(-5)}
+                      </a>
+                    )}
+                    {sim && !txHash && (
+                      <span style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.25)', fontStyle: 'italic' }}>deploy vault to activate</span>
+                    )}
+                    {evt.error && !sim && (
+                      <span style={{ fontSize: 9.5, color: '#FCA5A5' }}>failed: {evt.error.slice(0, 40)}</span>
+                    )}
+                    <span style={{ marginLeft: 'auto', fontSize: 9.5, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                      {new Date(evt.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                )
+              }
+
+              // Vault credited summary
+              if (evt.type === 'vault_credited') {
+                const txHash     = (evt as unknown as Record<string, string>).txHash
+                const totalFeeOG = (evt as unknown as Record<string, string>).totalFeeOG
+                const agentCount = (evt as unknown as Record<string, number>).agentCount
+                const vaultAddr  = (evt as unknown as Record<string, string>).vaultAddress
+                return (
+                  <div key={i} style={{ padding: '6px 10px 6px 12px', display: 'flex', flexDirection: 'column', gap: 4, borderLeft: '2px solid rgba(45,212,191,0.4)', marginBottom: 4, background: 'rgba(45,212,191,0.04)', borderRadius: '0 8px 8px 0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#2DD4BF' }}>Vault Credited</span>
+                      {totalFeeOG && <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: '#2DD4BF', background: 'rgba(45,212,191,0.10)', border: '1px solid rgba(45,212,191,0.25)', borderRadius: 6, padding: '1px 7px' }}>{totalFeeOG} OG</span>}
+                      {agentCount && <span style={{ fontSize: 9.5, color: 'var(--text-muted)' }}>{agentCount} agent{agentCount > 1 ? 's' : ''}</span>}
+                      {txHash?.startsWith('0x') && (
+                        <a
+                          href={`https://chainscan-galileo.0g.ai/tx/${txHash}`}
+                          target="_blank" rel="noopener noreferrer"
+                          style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--yellow)', background: 'rgba(240,180,41,0.08)', border: '1px solid rgba(240,180,41,0.22)', borderRadius: 6, padding: '2px 8px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3 }}
+                        >
+                          <ExternalLink size={9} /> {txHash.slice(0,10)}…{txHash.slice(-6)}
+                        </a>
+                      )}
+                      <span style={{ marginLeft: 'auto', fontSize: 9.5, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{new Date(evt.timestamp).toLocaleTimeString()}</span>
+                    </div>
+                    {vaultAddr && <code style={{ fontSize: 8.5, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>vault: {vaultAddr.slice(0,10)}…{vaultAddr.slice(-6)}</code>}
+                  </div>
+                )
+              }
 
               return (
                 <div key={i} style={{ display: 'grid', gridTemplateColumns: '3px 1fr', gap: '0 14px' }}>
