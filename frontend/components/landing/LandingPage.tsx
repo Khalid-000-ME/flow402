@@ -255,13 +255,12 @@ export default function LandingPage() {
             lineHeight: 1.06,
             maxWidth: 860,
           }}>
-            Agents that think,<br />
-            <span style={{ color: '#F0B429' }}>prove, and remember.</span>
+            Verifiable Intelligence.<br />
+            <span style={{ color: '#F0B429' }}>Seamless Execution.</span>
           </h1>
 
-          <p style={{ fontSize: 'clamp(14px,1.8vw,17px)', color: '#737373', maxWidth: 520, lineHeight: 1.8 }}>
-            Describe any task. Orcha-net spawns a swarm of specialized agents —
-            each step verified on-chain, every output permanently stored on 0G.
+          <p style={{ fontSize: 'clamp(14px,1.8vw,17px)', color: '#737373', maxWidth: 540, lineHeight: 1.8 }}>
+            Transform natural language into autonomous on-chain action. Orchestrate a verifiable multi-agent committee backed by the 0G Network.
           </p>
 
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>

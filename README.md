@@ -33,13 +33,80 @@ sequenceDiagram
 ### System Architecture
 ```mermaid
 graph TD
-    UI[Orchanet Studio UI] --> |Prompt| ORCH[Orchestrator Node]
-    ORCH --> |Resolve iNFTs| ENS[ENS / AgentRegistry]
-    ORCH --> |Parallel Inference| ZG_C[0G Compute]
-    ZG_C --> |Responses| ORCH
-    ORCH --> |Trade Intent| UNI[Uniswap Trade API]
-    UNI --> |Permit2 / Swap| ETH[Ethereum Sepolia]
-    ORCH --> |Immutable Artifact| ZG_S[0G Storage]
+    subgraph Frontend [Orchanet Client UI]
+        UI[Spawn Studio Interface]
+        Wallet[Web3 Wallet / Ethers.js]
+    end
+
+    subgraph Core [Orchestrator Engine]
+        ORCH[Orchestration Pipeline]
+        Router[Trade Intent Router]
+        MemStore[Session & Event State]
+    end
+
+    subgraph ZeroGravity [0G Decentralized Infrastructure]
+        ZG_C[0G Compute Provider Nodes]
+        ZG_S[0G Storage Nodes]
+        Ledger[0G Settlement Ledger]
+    end
+
+    subgraph Identity [On-Chain Identity & Registry]
+        ENS[ENS Resolution]
+        Registry[AgentRegistry Smart Contract]
+        iNFT[iNFT Metadata & Tokenomics]
+    end
+
+    subgraph Execution [DeFi Execution Layer]
+        UNI[Uniswap V3 / X Trade API]
+        URouter[Uniswap Universal Router]
+        Permit2[Permit2 Contract]
+        Sepolia[Ethereum Sepolia Network]
+    end
+
+    %% Client to Core
+    UI -->|1. Submit Natural Language Prompt| ORCH
+    Wallet -.->|Provide Signatures| UI
+
+    %% Identity Resolution
+    ORCH -->|2. Retrieve Agent IDs| ENS
+    ENS -->|3. Resolve .eth domains| Registry
+    Registry -->|4. Authenticate ownership| iNFT
+    iNFT -->|5. Verify Agent Capabilities| ORCH
+
+    %% Compute & Debate
+    ORCH -->|6. Parallel Task Dispatch| ZG_C
+    ZG_C -->|7. Lock & Settle Compute Fees| Ledger
+    Ledger -.->|8. Distribute OG tokens| ZG_C
+    ZG_C -->|9. Specialist + Critic Debate| ORCH
+    
+    %% Execution Route
+    ORCH -->|10. Extract Trade Intent| Router
+    Router -->|11. Request Optimal Route| UNI
+    UNI -->|12. Return Calldata| Router
+    Router -->|13. Request Permit2 Approval| Wallet
+    Wallet -->|14. Sign Off-Chain PermitSingle| Permit2
+    Router -->|15. Broadcast Transaction| URouter
+    URouter -->|16. Execute Swap On-Chain| Sepolia
+
+    %% Storage Commit
+    ORCH -->|17. Aggregate Run Artifact| MemStore
+    MemStore -->|18. Commit JSON File| ZG_S
+    ZG_S -->|19. Fragment & Replicate| ZG_S
+    ZG_S -->|20. Return Immutable Root Hash| ORCH
+    ORCH -->|21. Present Report & Receipt| UI
+
+    %% Custom Styling
+    classDef ui fill:#090909,stroke:#555,stroke-width:1px,color:#eee;
+    classDef core fill:#111,stroke:#f0b429,stroke-width:2px,color:#fff;
+    classDef zg fill:#0d1117,stroke:#00d2ff,stroke-width:2px,color:#fff;
+    classDef defi fill:#1a0f2e,stroke:#ff007a,stroke-width:2px,color:#fff;
+    classDef id fill:#0d1a26,stroke:#5298ff,stroke-width:2px,color:#fff;
+    
+    class UI,Wallet ui;
+    class ORCH,Router,MemStore core;
+    class ZG_C,ZG_S,Ledger zg;
+    class UNI,URouter,Permit2,Sepolia defi;
+    class ENS,Registry,iNFT id;
 ```
 
 ---
