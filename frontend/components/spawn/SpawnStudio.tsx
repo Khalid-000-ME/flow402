@@ -3,8 +3,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { useWallet } from '@/lib/wallet/WalletContext'
+import { ethers } from 'ethers'
 import { ArrowRight, CheckCircle2, AlertTriangle, ChevronRight, ExternalLink, HardDrive } from 'lucide-react'
 import AgentFlowGraph, { FlowNode } from './AgentFlowGraph'
+import AgentResponseCard from '@/components/shared/AgentResponseCard'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -70,25 +73,24 @@ function FeedRow({ evt }: { evt: ChatEvent }) {
   if (evt.type === 'inference_settled') {
     const agentType = (evt.data.agentType as string) ?? ''
     const txHash    = typeof evt.data.txHash === 'string' && evt.data.txHash.startsWith('0x') ? evt.data.txHash : null
+    if (!txHash && evt.data.teeVerified !== true) return null  // hide if no meaningful data
     return (
-      <div style={{ padding: '3px 10px 3px 22px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 9.5, color: TEXT_MUTED }}>
-          <ExternalLink size={8} style={{ flexShrink: 0 }} />
-          <span>{agentType} · settled</span>
-          {evt.data.teeVerified === true && (
-            <span style={{ fontSize: 8, color: GREEN, background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.18)', borderRadius: 3, padding: '0 3px', display: 'inline-flex', alignItems: 'center', gap: 2 }}>
-              <CheckCircle2 size={7} /> TEE
-            </span>
-          )}
-        </div>
+      <div style={{ padding: '4px 10px 4px 14px', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 9.5, color: TEXT_MUTED }}>{agentType}</span>
+        <span style={{ fontSize: 9, color: TEXT_MUTED, opacity: 0.5 }}>settled</span>
+        {evt.data.teeVerified === true && (
+          <span style={{ fontSize: 8, color: GREEN, background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.18)', borderRadius: 999, padding: '1px 5px', display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+            <CheckCircle2 size={7} /> TEE
+          </span>
+        )}
         {txHash && (
           <a
             href={`https://chainscan-galileo.0g.ai/tx/${txHash}`}
             target="_blank" rel="noopener noreferrer"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 9, fontFamily: 'var(--font-mono)', color: ACCENT, opacity: 0.75, textDecoration: 'none' }}
+            style={{ fontSize: 9.5, fontFamily: 'var(--font-mono)', color: ACCENT, background: 'rgba(240,180,41,0.08)', border: '1px solid rgba(240,180,41,0.22)', borderRadius: 6, padding: '2px 7px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 3 }}
           >
             <ExternalLink size={8} />
-            {txHash.slice(0, 14)}…{txHash.slice(-6)}
+            {txHash.slice(0, 10)}…{txHash.slice(-5)}
           </a>
         )}
       </div>
@@ -158,6 +160,18 @@ export default function SpawnStudio() {
 
   const feedRef  = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  const { address, connected, connect } = useWallet()
+  const [balance, setBalance] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!address) { setBalance(null); return }
+    // Use 0G testnet RPC directly — MetaMask may be on a different chain
+    const provider = new ethers.JsonRpcProvider('https://evmrpc-testnet.0g.ai')
+    provider.getBalance(address)
+      .then(b => setBalance(parseFloat(ethers.formatEther(b)).toFixed(4)))
+      .catch(() => setBalance(null))
+  }, [address])
 
   const searchParams = useSearchParams()
 
@@ -332,7 +346,7 @@ export default function SpawnStudio() {
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-primary)', paddingTop: 64 }}>
 
       {/* Top bar */}
-      <div style={{ height: 40, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12, paddingLeft: 20, paddingRight: 20, borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
+      <div style={{ height: 44, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12, paddingLeft: 20, paddingRight: 20, borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
         <span style={{ fontSize: 11.5, fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>Spawn Studio</span>
         {runId && (
           <code style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-mono)', background: 'rgba(255,255,255,0.04)', padding: '1px 6px', borderRadius: 4 }}>
@@ -349,11 +363,35 @@ export default function SpawnStudio() {
             <CheckCircle2 size={10} /> Complete
           </span>
         )}
-        {complete && runId && (
-          <Link href={`/runs/${runId}`} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: GREEN, background: 'rgba(74,222,128,0.07)', border: '1px solid rgba(74,222,128,0.16)', borderRadius: 6, padding: '3px 10px', textDecoration: 'none' }}>
-            View audit trail
-          </Link>
-        )}
+
+        {/* Wallet balance — right side */}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+          {complete && runId && (
+            <Link href={`/runs/${runId}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: GREEN, background: 'rgba(74,222,128,0.07)', border: '1px solid rgba(74,222,128,0.16)', borderRadius: 6, padding: '3px 10px', textDecoration: 'none' }}>
+              View audit trail
+            </Link>
+          )}
+          {connected && address ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {balance !== null && (
+                <span style={{ fontSize: 10.5, fontFamily: 'var(--font-mono)', color: 'rgba(255,255,255,0.45)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '3px 9px', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#4ADE80', display: 'inline-block' }} />
+                  {balance} OG
+                </span>
+              )}
+              <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 6, padding: '3px 9px' }}>
+                {address.slice(0, 6)}…{address.slice(-4)}
+              </span>
+            </div>
+          ) : (
+            <button
+              onClick={connect}
+              style={{ fontSize: 11, fontWeight: 700, color: ACCENT, background: 'rgba(240,180,41,0.07)', border: '1px solid rgba(240,180,41,0.2)', borderRadius: 6, padding: '3px 10px', cursor: 'pointer' }}
+            >
+              Connect Wallet
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Body */}
@@ -378,10 +416,15 @@ export default function SpawnStudio() {
             ) : feedEvents.map((evt) => (
               <div key={evt.id} style={{ paddingLeft: 6, paddingRight: 6 }}>
                 {(evt.type === 'agent_message' || evt.type === 'debate_round') ? (
-                  <InferenceCard
-                    evt={evt}
-                    expanded={expandedFeedId === evt.id}
-                    onToggle={() => setExpandedFeedId(p => p === evt.id ? null : evt.id)}
+                  <AgentResponseCard
+                    agentType={(evt.data.agentType as string) ?? 'System'}
+                    agentColor='rgba(255,255,255,0.6)'
+                    content={(evt.data.content as string) ?? ''}
+                    eventLabel={evt.type === 'debate_round' ? 'Debate' : 'Message'}
+                    timestamp={evt.timestamp}
+                    teeVerified={evt.data.teeVerified === true}
+                    txHash={typeof evt.data.txHash === 'string' ? evt.data.txHash : undefined}
+                    rootHash={typeof evt.data.rootHash === 'string' ? evt.data.rootHash : undefined}
                   />
                 ) : (
                   <FeedRow evt={evt} />

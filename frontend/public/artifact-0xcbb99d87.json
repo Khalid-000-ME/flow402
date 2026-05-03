@@ -1,0 +1,145 @@
+{
+  "runId": "d1fb0082-ba1e-4928-be4a-f48886daa637",
+  "prompt": "Find me the yield optimization opportunities and the tokenomics of the ETH",
+  "status": "complete",
+  "agentsSpawned": 2,
+  "inferenceCalls": 4,
+  "storageBytesCommitted": 10714,
+  "duration": 23158,
+  "timestamp": 1777754300045,
+  "rootHash": "",
+  "storageTxHash": "",
+  "finalOutput": "## Orcha-net Analysis Report\n\n**Run ID:** `d1fb0082-ba1e-4928-be4a-f48886daa637`\n\n**Prompt:** Find me the yield optimization opportunities and the tokenomics of the ETH\n\n### DeFi Analyst\nTo provide a structured analysis of yield optimization opportunities and tokenomics for ETH within the context of DeFi protocols, we need to consider several aspects:\n\n1. **Protocol Mechanics**: Understand how different DeFi protocols utilize ETH as collateral or in their mechanisms.\n2. **Liquidity Risk**: Evaluate the risks associated with ETH liquidity in various DeFi platforms.\n3. **Incentive Alignment**: Analyze how ETH is used to align incentives between users and protocol developers.\n4. **Competitive Positioning**: Compare ETH's role and performance across different DeFi protocols.\n\nGiven that ETH itself is not a DeFi protocol but a foundational asset in the DeFi ecosystem, we will focus on its use in various DeFi applications and protocols.\n\n### Findings\n\n```json\n{\n  \"findings\": [\n    {\n      \"description\": \"ETH is often used as collateral in lending protocols like Aave, Compound, and dYdX. Users can borrow stablecoins or other assets by depositing ETH as collateral.\",\n      \"mechanics\": \"Collateralization, Borrowing, Lending\",\n      \"examples\": [\n        {\n          \"protocol\": \"Aave\",\n          \"functionality\": \"Users can lock ETH to earn interest and borrow stablecoins or other assets.\",\n          \"onchain_data\": \"https://aave.com/\"\n        },\n        {\n          \"protocol\": \"Compound\",\n          \"functionality\": \"Users can deposit ETH to earn interest and borrow other assets using ETH as collateral.\",\n          \"onchain_data\": \"https://compound.finance/\"\n        },\n        {\n          \"protocol\": \"dYdX\",\n          \"functionality\": \"ETH can be used as collateral for leveraged trading on dYdX.\",\n          \"onchain_data\": \"https://dydx.exchange/\"\n        }\n      ]\n    },\n    {\n      \"description\": \"ETH can also be staked to earn rewards through staking pools or directly on Ethereum networks like Eth2 (beacon chain).\",\n      \"mechanics\": \"Staking\",\n      \"examples\": [\n        {\n          \"protocol\": \"Eth2 (beacon chain)\",\n          \"functionality\": \"Users can stake ETH to participate in the consensus process and earn rewards.\",\n          \"onchain_data\": \"https://eth2.beaconchain.rocks/\"\n        }\n      ]\n    },\n    {\n      \"description\": \"ETH is also utilized in liquidity provision mechanisms such as Uniswap V3 and SushiSwap.\",\n      \"mechanics\": \"Liquidity Provision\",\n      \"examples\": [\n        {\n          \"protocol\": \"Uniswap V3\",\n          \"functionality\": \"Users can provide liquidity to ETH/USD or other pairs and earn fees.\",\n          \"onchain_data\": \"https://app.uniswap.org/#/v3/pool-search\"\n        },\n        {\n          \"protocol\": \"SushiSwap\",\n          \"functionality\": \"Users can provide liquidity to ETH/USD or other pairs and earn fees, with an additional governance token reward.\",\n          \"onchain_data\": \"https://sushiswap.fi/\"\n        }\n      ]\n    },\n    {\n      \"description\": \"ETH can be wrapped into WETH (Wrapped Ether) and used in various DeFi applications that require ERC-20 tokens.\",\n      \"mechanics\": \"Wrapping\",\n      \"examples\": [\n        {\n          \"protocol\": \"Uniswap V2\",\n          \"functionality\": \"WETH can be used as collateral or in swaps.\",\n          \"onchain_data\": \"https://uniswap.org/v2\"\n        }\n      ]\n    }\n  ],\n  \"risks\": [\n    {\n      \"description\": \"ETH price volatility poses a significant risk to lenders and borrowers who use ETH as collateral. The value of ETH can fluctuate widely, affecting the amount of collateral required and the value of borrowed assets.\",\n      \"type\": \"Market Risk\"\n    },\n    {\n      \"description\": \"ETH staking involves a lock-up period and potential slashing risks if the validator fails to follow the rules.\",\n      \"type\": \"Staking Risk\"\n    },\n    {\n      \"description\": \"Liquidity provision can expose users to market risks, especially in volatile markets where slippage and price impacts can be significant.\",\n      \"type\": \"Liquidity Risk\"\n    }\n  ],\n  \"score\": 7\n}\n```\n\n### Risks\n\n```json\n{\n  \"risks\": [\n    {\n      \"description\": \"ETH price volatility poses a significant risk to lenders and borrowers who use ETH as collateral. The value of ETH can fluctuate widely, affecting the amount of collateral required and the value of borrowed assets.\",\n      \"type\": \"Market Risk\"\n    },\n    {\n      \"description\": \"ETH staking involves a lock-up period and potential slashing risks if the validator fails to follow the rules.\",\n      \"type\": \"Staking Risk\"\n    },\n    {\n      \"description\": \"Liquidity provision can expose users to\n\n### Tokenomics Modeler\nTo analyze the yield optimization opportunities and the tokenomics of Ethereum (ETH), we need to consider several aspects:\n\n1. **Supply Schedule**: Ethereum's supply is not fixed; it increases over time through block rewards and transaction fees. However, the rate of increase is controlled by the network parameters.\n\n2. **Vesting Cliffs**: Ethereum does not have a vesting mechanism for its initial supply. The majority of the early supply was distributed through mining, and there are no specific vesting schedules for these miners or early investors.\n\n3. **Inflation/Deflation Mechanisms**: Ethereum currently has an inflationary mechanism due to block rewards and transaction fees. The block reward decreases over time as part of the difficulty adjustment in the consensus mechanism (Proof of Work to Proof of Stake transition).\n\n4. **Stakeholder Incentive Alignment**: Stakeholders include miners, validators, and other participants. The primary incentive is currently aligned with mining and transaction fees. With the transition to Proof of Stake (PoS), validators will be incentivized to secure the network and maintain its integrity.\n\nHere's the JSON representation based on the above analysis:\n\n```json\n{\n  \"model\": {\n    \"supply_schedule\": \"Ethereum's supply increases over time through block rewards and transaction fees. The block reward decreases gradually over time.\",\n    \"vesting_cliffs\": \"None. Early ETH supply was primarily distributed through mining without specific vesting schedules.\",\n    \"inflation_deflation_mechanisms\": \"Inflationary due to block rewards and transaction fees. Transitioning to PoS will reduce inflation as block rewards are phased out.\",\n    \"stakeholder_incentive_alignment\": \"Currently aligned with mining and transaction fees. Transitioning to PoS will align stakeholders with securing the network.\"\n  },\n  \"projections\": {\n    \"future_supply\": \"The future supply will continue to increase through transaction fees until the transition to PoS, after which the supply growth will be determined by the staking rewards.\",\n    \"inflation_rate\": \"The inflation rate is expected to decrease over time as block rewards are reduced and eventually eliminated with the full transition to PoS.\"\n  },\n  \"red_flags\": [\n    \"The transition from Proof of Work (PoW) to Proof of Stake (PoS) involves significant risks, including the potential for centralization if too few entities control the majority of staking power.\",\n    \"The long-term sustainability of the network depends heavily on the adoption and efficiency of the PoS mechanism, which is still evolving.\"\n  ]\n}\n```\n\n### Yield Optimization Opportunities\n\nFor Ethereum (ETH):\n\n1. **Staking Rewards**: As the network transitions to PoS, validators can earn staking rewards by holding and staking their ETH. This can be optimized by finding the best staking pools that offer competitive rewards and security.\n\n2. **Lending Platforms**: Participating in lending platforms like Compound, Aave, or dYdX allows users to earn interest on their ETH holdings. These platforms often offer higher yields compared to simply holding ETH.\n\n3. **DeFi Applications**: Engaging in various decentralized finance (DeFi) applications such as liquidity provision, yield farming, and other staking-related activities can provide additional yield opportunities.\n\n4. **DAOs and Governance Tokens**: Participating in DAOs (Decentralized Autonomous Organizations) that issue governance tokens can provide additional yield through voting rights and potential rewards.\n\n5. **Layer-2 Solutions**: Using layer-2 solutions like Optimism, Arbitrum, or Polygon can increase the efficiency and throughput of transactions, potentially reducing transaction fees and increasing overall network usage.\n\n6. **Cross-Chain Bridges and Aggregators**: Utilizing cross-chain bridges and aggregators to move ETH between different networks or to access new yield opportunities can also be considered.\n\nThis JSON structure provides a clear overview of the current tokenomics of ETH and potential areas for yield optimization.\n\n### Critic Analysis\n```json\n{\n  \"weakest_claim\": \"ETH does not have a vesting mechanism for its initial supply.\",\n  \"challenge\": \"While it is true that early ETH supply was primarily distributed through mining without specific vesting schedules, some early investors and miners may have had vesting arrangements. Additionally, certain projects or initiatives might have had internal vesting mechanisms to manage early distribution. Therefore, the claim that ETH does not have any vesting cliffs is overly simplistic and may not fully capture the complexities of early distribution and management.\",\n  \"agent_scores\": {\n    \"DeFi Analyst\": 8,\n    \"Tokenomics Modeler\": 7\n  },\n  \"consensus_reached\": false\n}\n```\n\n### Explanation:\n1. **Weakest Claim Identification**:\n   - The claim in the `Tokenomics Modeler` output that \"ETH does not have a vesting mechanism for its initial supply\" is the weakest claim. It is overly simplistic because it does not account for possible vesting arrangements or internal management mechanisms that could exist for early distributions.\n\n2. **Challenge**:\n   - The challenge provided argues that while the public knowledge about ETH does not explicitly mention vesting mechanisms, there might be instances where such mechanisms were used internally or through specific projects. This adds nuance and complexity to the claim, making it less absolute and more reflective of real-world scenarios.\n\n3. **Agent Scores**:\n   - **DeFi Analyst**: Given the detailed and comprehensive nature of the findings and risks, this agent receives a high score of 8.\n   - **Tokenomics Modeler**: The model provides a thorough analysis of supply mechanics, stakeholder incentives, and yield optimization opportunities, but the claim about vesting cliffs being non-existent is challenged here, hence a slightly lower score of 7.\n\n4. **Consensus Reached**:\n   - Since the `Tokenomics Modeler` claim was challenged, consensus has not been reached.",
+  "events": [
+    {
+      "type": "agent_message",
+      "agentType": "Orchestrator",
+      "content": "Planning agent selection for: \"Find me the yield optimization opportunities and the tokenomics of the ETH\"",
+      "timestamp": 1777754300045
+    },
+    {
+      "type": "inference_settled",
+      "agentType": "Orchestrator",
+      "teeVerified": false,
+      "timestamp": 1777754303155
+    },
+    {
+      "type": "agent_message",
+      "agentType": "Orchestrator",
+      "content": "Spawning: DeFi Analyst, Tokenomics Modeler",
+      "timestamp": 1777754303156
+    },
+    {
+      "type": "agent_spawned",
+      "agentType": "DeFi Analyst",
+      "ensName": "defi-analyst.orchanet.eth",
+      "timestamp": 1777754303894,
+      "iNFT": {
+        "tokenId": 0,
+        "ensName": "defi-analyst.orchanet.eth",
+        "metadataHash": "0xb15be47d7de80e1787af33a8f67de06d0dcbb360c68cf1a6d136d961fb52af94",
+        "storageRootHash": "0x9f4506a6e04c320671fe40fba1fdf14e24ab03b195b7ada248cb284f0ff8649b",
+        "verified": true,
+        "spawnCount": 9,
+        "owner": "0x1111d87736c9C90Bb9eAE83297BE83ae990699cE"
+      }
+    },
+    {
+      "type": "inference_started",
+      "agentType": "DeFi Analyst",
+      "timestamp": 1777754303894
+    },
+    {
+      "type": "agent_spawned",
+      "agentType": "Tokenomics Modeler",
+      "ensName": "tokenomics.orchanet.eth",
+      "timestamp": 1777754303894,
+      "iNFT": {
+        "tokenId": 2,
+        "ensName": "tokenomics.orchanet.eth",
+        "metadataHash": "0x153199c4bbf1023bf226764053deb21deac28dbfb6b49a70b31fed7542d449aa",
+        "storageRootHash": "0x6c4a138a736b2a1bde2a3ed0a8c4cb36d5ab599ed65e3a22058cb69ff6eea7a4",
+        "verified": true,
+        "spawnCount": 15,
+        "owner": "0x1111d87736c9C90Bb9eAE83297BE83ae990699cE"
+      }
+    },
+    {
+      "type": "inference_started",
+      "agentType": "Tokenomics Modeler",
+      "timestamp": 1777754303894
+    },
+    {
+      "type": "inference_settled",
+      "agentType": "Tokenomics Modeler",
+      "teeVerified": false,
+      "timestamp": 1777754314493
+    },
+    {
+      "type": "agent_message",
+      "agentType": "Tokenomics Modeler",
+      "content": "To analyze the yield optimization opportunities and the tokenomics of Ethereum (ETH), we need to consider several aspects:\n\n1. **Supply Schedule**: Ethereum's supply is not fixed; it increases over time through block rewards and transaction fees. However, the rate of increase is controlled by the network parameters.\n\n2. **Vesting Cliffs**: Ethereum does not have a vesting mechanism for its initial supply. The majority of the early supply was distributed through mining, and there are no specific vesting schedules for these miners or early investors.\n\n3. **Inflation/Deflation Mechanisms**: Ethereum currently has an inflationary mechanism due to block rewards and transaction fees. The block reward decreases over time as part of the difficulty adjustment in the consensus mechanism (Proof of Work to Proof of Stake transition).\n\n4. **Stakeholder Incentive Alignment**: Stakeholders include miners, validators, and other participants. The primary incentive is currently aligned with mining and transaction fees. With the transition to Proof of Stake (PoS), validators will be incentivized to secure the network and maintain its integrity.\n\nHere's the JSON representation based on the above analysis:\n\n```json\n{\n  \"model\": {\n    \"supply_schedule\": \"Ethereum's supply increases over time through block rewards and transaction fees. The block reward decreases gradually over time.\",\n    \"vesting_cliffs\": \"None. Early ETH supply was primarily distributed through mining without specific vesting schedules.\",\n    \"inflation_deflation_mechanisms\": \"Inflationary due to block rewards and transaction fees. Transitioning to PoS will reduce inflation as block rewards are phased out.\",\n    \"stakeholder_incentive_alignment\": \"Currently aligned with mining and transaction fees. Transitioning to PoS will align stakeholders with securing the network.\"\n  },\n  \"projections\": {\n    \"future_supply\": \"The future supply will continue to increase through transaction fees until the transition to PoS, after which the supply growth will be determined by the staking rewards.\",\n    \"inflation_rate\": \"The inflation rate is expected to decrease over time as block rewards are reduced and eventually eliminated with the full transition to PoS.\"\n  },\n  \"red_flags\": [\n    \"The transition from Proof of Work (PoW) to Proof of Stake (PoS) involves significant risks, including the potential for centralization if too few entities control the majority of staking power.\",\n    \"The long-term sustainability of the network depends heavily on the adoption and efficiency of the PoS mechanism, which is still evolving.\"\n  ]\n}\n```\n\n### Yield Optimization Opportunities\n\nFor Ethereum (ETH):\n\n1. **Staking Rewards**: As the network transitions to PoS, validators can earn staking rewards by holding and staking their ETH. This can be optimized by finding the best staking pools that offer competitive rewards and security.\n\n2. **Lending Platforms**: Participating in lending platforms like Compound, Aave, or dYdX allows users to earn interest on their ETH holdings. These platforms often offer higher yields compared to simply holding ETH.\n\n3. **DeFi Applications**: Engaging in various decentralized finance (DeFi) applications such as liquidity provision, yield farming, and other staking-related activities can provide additional yield opportunities.\n\n4. **DAOs and Governance Tokens**: Participating in DAOs (Decentralized Autonomous Organizations) that issue governance tokens can provide additional yield through voting rights and potential rewards.\n\n5. **Layer-2 Solutions**: Using layer-2 solutions like Optimism, Arbitrum, or Polygon can increase the efficiency and throughput of transactions, potentially reducing transaction fees and increasing overall network usage.\n\n6. **Cross-Chain Bridges and Aggregators**: Utilizing cross-chain bridges and aggregators to move ETH between different networks or to access new yield opportunities can also be considered.\n\nThis JSON structure provides a clear overview of the current tokenomics of ETH and potential areas for yield optimization.",
+      "timestamp": 1777754314493
+    },
+    {
+      "type": "inference_settled",
+      "agentType": "DeFi Analyst",
+      "teeVerified": false,
+      "timestamp": 1777754316779
+    },
+    {
+      "type": "agent_message",
+      "agentType": "DeFi Analyst",
+      "content": "To provide a structured analysis of yield optimization opportunities and tokenomics for ETH within the context of DeFi protocols, we need to consider several aspects:\n\n1. **Protocol Mechanics**: Understand how different DeFi protocols utilize ETH as collateral or in their mechanisms.\n2. **Liquidity Risk**: Evaluate the risks associated with ETH liquidity in various DeFi platforms.\n3. **Incentive Alignment**: Analyze how ETH is used to align incentives between users and protocol developers.\n4. **Competitive Positioning**: Compare ETH's role and performance across different DeFi protocols.\n\nGiven that ETH itself is not a DeFi protocol but a foundational asset in the DeFi ecosystem, we will focus on its use in various DeFi applications and protocols.\n\n### Findings\n\n```json\n{\n  \"findings\": [\n    {\n      \"description\": \"ETH is often used as collateral in lending protocols like Aave, Compound, and dYdX. Users can borrow stablecoins or other assets by depositing ETH as collateral.\",\n      \"mechanics\": \"Collateralization, Borrowing, Lending\",\n      \"examples\": [\n        {\n          \"protocol\": \"Aave\",\n          \"functionality\": \"Users can lock ETH to earn interest and borrow stablecoins or other assets.\",\n          \"onchain_data\": \"https://aave.com/\"\n        },\n        {\n          \"protocol\": \"Compound\",\n          \"functionality\": \"Users can deposit ETH to earn interest and borrow other assets using ETH as collateral.\",\n          \"onchain_data\": \"https://compound.finance/\"\n        },\n        {\n          \"protocol\": \"dYdX\",\n          \"functionality\": \"ETH can be used as collateral for leveraged trading on dYdX.\",\n          \"onchain_data\": \"https://dydx.exchange/\"\n        }\n      ]\n    },\n    {\n      \"description\": \"ETH can also be staked to earn rewards through staking pools or directly on Ethereum networks like Eth2 (beacon chain).\",\n      \"mechanics\": \"Staking\",\n      \"examples\": [\n        {\n          \"protocol\": \"Eth2 (beacon chain)\",\n          \"functionality\": \"Users can stake ETH to participate in the consensus process and earn rewards.\",\n          \"onchain_data\": \"https://eth2.beaconchain.rocks/\"\n        }\n      ]\n    },\n    {\n      \"description\": \"ETH is also utilized in liquidity provision mechanisms such as Uniswap V3 and SushiSwap.\",\n      \"mechanics\": \"Liquidity Provision\",\n      \"examples\": [\n        {\n          \"protocol\": \"Uniswap V3\",\n          \"functionality\": \"Users can provide liquidity to ETH/USD or other pairs and earn fees.\",\n          \"onchain_data\": \"https://app.uniswap.org/#/v3/pool-search\"\n        },\n        {\n          \"protocol\": \"SushiSwap\",\n          \"functionality\": \"Users can provide liquidity to ETH/USD or other pairs and earn fees, with an additional governance token reward.\",\n          \"onchain_data\": \"https://sushiswap.fi/\"\n        }\n      ]\n    },\n    {\n      \"description\": \"ETH can be wrapped into WETH (Wrapped Ether) and used in various DeFi applications that require ERC-20 tokens.\",\n      \"mechanics\": \"Wrapping\",\n      \"examples\": [\n        {\n          \"protocol\": \"Uniswap V2\",\n          \"functionality\": \"WETH can be used as collateral or in swaps.\",\n          \"onchain_data\": \"https://uniswap.org/v2\"\n        }\n      ]\n    }\n  ],\n  \"risks\": [\n    {\n      \"description\": \"ETH price volatility poses a significant risk to lenders and borrowers who use ETH as collateral. The value of ETH can fluctuate widely, affecting the amount of collateral required and the value of borrowed assets.\",\n      \"type\": \"Market Risk\"\n    },\n    {\n      \"description\": \"ETH staking involves a lock-up period and potential slashing risks if the validator fails to follow the rules.\",\n      \"type\": \"Staking Risk\"\n    },\n    {\n      \"description\": \"Liquidity provision can expose users to market risks, especially in volatile markets where slippage and price impacts can be significant.\",\n      \"type\": \"Liquidity Risk\"\n    }\n  ],\n  \"score\": 7\n}\n```\n\n### Risks\n\n```json\n{\n  \"risks\": [\n    {\n      \"description\": \"ETH price volatility poses a significant risk to lenders and borrowers who use ETH as collateral. The value of ETH can fluctuate widely, affecting the amount of collateral required and the value of borrowed assets.\",\n      \"type\": \"Market Risk\"\n    },\n    {\n      \"description\": \"ETH staking involves a lock-up period and potential slashing risks if the validator fails to follow the rules.\",\n      \"type\": \"Staking Risk\"\n    },\n    {\n      \"description\": \"Liquidity provision can expose users to",
+      "timestamp": 1777754316779
+    },
+    {
+      "type": "agent_spawned",
+      "agentType": "Critic",
+      "ensName": "critic.orchanet.eth",
+      "timestamp": 1777754316779
+    },
+    {
+      "type": "inference_settled",
+      "agentType": "Critic",
+      "teeVerified": false,
+      "timestamp": 1777754323203
+    },
+    {
+      "type": "debate_round",
+      "agentType": "Critic",
+      "round": 1,
+      "content": "```json\n{\n  \"weakest_claim\": \"ETH does not have a vesting mechanism for its initial supply.\",\n  \"challenge\": \"While it is true that early ETH supply was primarily distributed through mining without specific vesting schedules, some early investors and miners may have had vesting arrangements. Additionally, certain projects or initiatives might have had internal vesting mechanisms to manage early distribution. Therefore, the claim that ETH does not have any vesting cliffs is overly simplistic and may not fully capture the complexities of early distribution and management.\",\n  \"agent_scores\": {\n    \"DeFi Analyst\": 8,\n    \"Tokenomics Modeler\": 7\n  },\n  \"consensus_reached\": false\n}\n```\n\n### Explanation:\n1. **Weakest Claim Identification**:\n   - The claim in the `Tokenomics Modeler` output that \"ETH does not have a vesting mechanism for its initial supply\" is the weakest claim. It is overly simplistic because it does not account for possible vesting arrangements or internal management mechanisms that could exist for early distributions.\n\n2. **Challenge**:\n   - The challenge provided argues that while the public knowledge about ETH does not explicitly mention vesting mechanisms, there might be instances where such mechanisms were used internally or through specific projects. This adds nuance and complexity to the claim, making it less absolute and more reflective of real-world scenarios.\n\n3. **Agent Scores**:\n   - **DeFi Analyst**: Given the detailed and comprehensive nature of the findings and risks, this agent receives a high score of 8.\n   - **Tokenomics Modeler**: The model provides a thorough analysis of supply mechanics, stakeholder incentives, and yield optimization opportunities, but the claim about vesting cliffs being non-existent is challenged here, hence a slightly lower score of 7.\n\n4. **Consensus Reached**:\n   - Since the `Tokenomics Modeler` claim was challenged, consensus has not been reached.",
+      "timestamp": 1777754323203
+    }
+  ],
+  "iNFTIdentities": {
+    "DeFi Analyst": {
+      "tokenId": 0,
+      "ensName": "defi-analyst.orchanet.eth",
+      "metadataHash": "0xb15be47d7de80e1787af33a8f67de06d0dcbb360c68cf1a6d136d961fb52af94",
+      "storageRootHash": "0x9f4506a6e04c320671fe40fba1fdf14e24ab03b195b7ada248cb284f0ff8649b",
+      "spawnCount": 9,
+      "verified": true,
+      "owner": "0x1111d87736c9C90Bb9eAE83297BE83ae990699cE"
+    },
+    "Tokenomics Modeler": {
+      "tokenId": 2,
+      "ensName": "tokenomics.orchanet.eth",
+      "metadataHash": "0x153199c4bbf1023bf226764053deb21deac28dbfb6b49a70b31fed7542d449aa",
+      "storageRootHash": "0x6c4a138a736b2a1bde2a3ed0a8c4cb36d5ab599ed65e3a22058cb69ff6eea7a4",
+      "spawnCount": 15,
+      "verified": true,
+      "owner": "0x1111d87736c9C90Bb9eAE83297BE83ae990699cE"
+    },
+    "Critic": {
+      "tokenId": 3,
+      "ensName": "critic.orchanet.eth",
+      "metadataHash": "0x1f0dd4f3c12c60d1209e7cc36f9078dbb706d397c5461d3ac56e6a715596cef3",
+      "storageRootHash": "0xb0d1987807ea4e33d1869ff527fbdcf98f953f14660e7dd4cb17cc4ecf2e7341",
+      "spawnCount": 0,
+      "verified": true,
+      "owner": "0x1111d87736c9C90Bb9eAE83297BE83ae990699cE"
+    }
+  }
+}
