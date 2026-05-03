@@ -23,6 +23,7 @@ import {
   CRITIC_SYSTEM_PROMPT,
 } from './agents'
 import { setRunRecord } from './runStore'
+import { distributeInferenceFees } from './fees'
 import type { RunEvent } from '@/lib/types'
 
 // ── AgentRegistry ABI (minimal — only commitRun) ──────────────────────────────
@@ -370,9 +371,9 @@ export async function orchestrate(
   // ── Step 6a: Direct AgentRegistry.commitRun on 0G Chain ─────────────────
   if (rootHash && REGISTRY_ADDRESS && PRIVATE_KEY) {
     try {
-      const txHash = await commitRunOnChain(runId, rootHash, [...agentTypes, 'Critic'])
+      const txHash = await commitRunOnChain(runId, rootHash, [...new Set([...agentTypes, 'Critic'])])
       track({
-        type: 'storage_committed',
+        type: 'chain_committed',
         label: 'AgentRegistry.commitRun (on-chain)',
         txHash,
         timestamp: Date.now(),
@@ -395,6 +396,64 @@ export async function orchestrate(
       })
     }
   }
+
+  // ── Step 6b: Fee distribution — always emit events for every run ─────────
+  // Fires regardless of vault/SPAWN_FEE_ENABLED state so the fee section is
+  // always visible in Studio + run records. Marks events as simulated=true
+  // when vault is not configured (no real on-chain payment).
+  {
+    // Use a Set to prevent duplicates — Critic may already be in agentTypes
+    const allAgents  = [...new Set([...agentTypes, 'Critic'])]
+    const feePerAgent = (parseFloat(process.env.SPAWN_FEE_OG || '0.001') / allAgents.length).toFixed(6)
+    const vaultAddr   = process.env.SPAWN_FEE_VAULT_ADDRESS || ''
+    const vaultReady  = !!vaultAddr && process.env.SPAWN_FEE_ENABLED === 'true'
+
+    let feeResult: Awaited<ReturnType<typeof distributeInferenceFees>> | null = null
+
+    // Attempt real payment if vault is configured
+    if (vaultReady) {
+      try {
+        feeResult = await distributeInferenceFees(identityMap, allAgents, runId)
+      } catch (err) {
+        console.warn('[orchestrator] Fee distribution failed:', err instanceof Error ? err.message : err)
+      }
+    }
+
+    // Emit per-agent fee events (real or simulated)
+    for (const agentType of allAgents) {
+      const identity  = identityMap.get(agentType) ?? null
+      const owner     = identity?.owner ?? 'unregistered'
+      const payment   = feeResult?.payments?.find(p => p.agentType === agentType)
+
+      const evt = {
+        type:      'fee_distributed' as RunEvent['type'],
+        agentType,
+        owner,
+        amountOG:  payment?.amountOG ?? feePerAgent,
+        txHash:    payment?.txHash,
+        error:     payment?.error ?? (vaultReady ? undefined : 'vault not deployed'),
+        simulated: !vaultReady,
+        timestamp: Date.now(),
+      }
+      track(evt)                   // → persisted in run record events[]
+      emit('fee_distributed', evt) // → SSE to Studio feed
+    }
+
+    // Vault credited summary (only when real payment happened)
+    if (feeResult?.txHash) {
+      const summaryEvt = {
+        type:         'vault_credited' as RunEvent['type'],
+        vaultAddress: feeResult.vaultAddress,
+        txHash:       feeResult.txHash,
+        totalFeeOG:   feeResult.totalFeeOG,
+        agentCount:   feeResult.payments.length,
+        timestamp:    Date.now(),
+      }
+      track(summaryEvt)
+      emit('vault_credited', summaryEvt)
+    }
+  }
+
 
   // ── Step 7: Persist in memory ────────────────────────────────────────────
   setRunRecord(runId, runRecord)

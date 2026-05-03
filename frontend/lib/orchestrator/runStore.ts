@@ -33,6 +33,8 @@ interface IndexEntry {
   timestamp: number
   rootHash: string
   storageTxHash?: string
+  chainTxHash?: string    // txHash from AgentRegistry.commitRun
+  size?: number
 }
 
 // ── In-memory store ───────────────────────────────────────────────────────────
@@ -76,6 +78,10 @@ export function setRunRecord(runId: string, record: RunRecord) {
 
   // Persist to disk index (prepend newest first)
   const existing = readIndex().filter((e) => e.runId !== runId)
+  // Extract chainTxHash from chain_committed event if present
+  const chainCommitted = record.events?.find((e: { type: string; txHash?: string }) => e.type === 'chain_committed')
+  const chainTxHash = chainCommitted?.txHash as string | undefined
+
   const entry: IndexEntry = {
     runId: record.runId,
     prompt: record.prompt,
@@ -87,6 +93,8 @@ export function setRunRecord(runId: string, record: RunRecord) {
     timestamp: record.timestamp,
     rootHash: record.rootHash,
     storageTxHash: record.storageTxHash,
+    chainTxHash,
+    size: record.storageBytesCommitted,
   }
   writeIndex([entry, ...existing].slice(0, 200)) // keep last 200 on disk
 }

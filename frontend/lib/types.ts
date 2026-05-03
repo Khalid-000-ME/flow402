@@ -53,6 +53,12 @@ export interface RunEvent {
   iNFT?: iNFTIdentity
   /** TEE signature verification result from processResponse (inference events only) */
   teeVerified?: boolean
+  /** Fee distribution fields (fee_distributed / vault_credited events) */
+  owner?: string
+  amountOG?: string
+  error?: string
+  /** True when fee is computed but vault not deployed — no real on-chain payment */
+  simulated?: boolean
 }
 
 export interface RunRecord {
