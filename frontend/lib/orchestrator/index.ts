@@ -13,8 +13,7 @@
 
 import { ethers }        from 'ethers'
 import { runInference }  from '@/lib/0g/compute'
-import { uploadToStorage } from '@/lib/0g/storage'
-import { triggerRunCommitment } from '@/lib/keeperhub/mcp'
+import { uploadToStorage, downloadFromStorage } from '@/lib/0g/storage'
 import { resolveAllIdentities, invalidateIdentityCache } from '@/lib/0g/agentIdentity'
 import type { AgentIdentity } from '@/lib/0g/agentIdentity'
 import {
@@ -371,7 +370,7 @@ export async function orchestrate(
   // ── Step 6a: Direct AgentRegistry.commitRun on 0G Chain ─────────────────
   if (rootHash && REGISTRY_ADDRESS && PRIVATE_KEY) {
     try {
-      const txHash = await commitRunOnChain(runId, rootHash, agentTypes)
+      const txHash = await commitRunOnChain(runId, rootHash, [...agentTypes, 'Critic'])
       track({
         type: 'storage_committed',
         label: 'AgentRegistry.commitRun (on-chain)',
@@ -392,31 +391,6 @@ export async function orchestrate(
         type: 'agent_message',
         agentType: 'Chain',
         content: `AgentRegistry.commitRun failed: ${err instanceof Error ? err.message : String(err)}`,
-        timestamp: Date.now(),
-      })
-    }
-  }
-
-  // ── Step 6b: KeeperHub guaranteed settlement (optional) ─────────────────
-  if (rootHash && process.env.KEEPERHUB_API_KEY && process.env.KEEPERHUB_WORKFLOW_ID) {
-    try {
-      const keeperResult = await triggerRunCommitment({
-        runId,
-        rootHash,
-        agentTypes,
-        contractAddress: REGISTRY_ADDRESS,
-      })
-      track({
-        type: 'storage_committed',
-        label: 'KeeperHub guaranteed settlement',
-        txHash: keeperResult.txHash,
-        timestamp: Date.now(),
-      })
-    } catch (err) {
-      track({
-        type: 'agent_message',
-        agentType: 'KeeperHub',
-        content: `KeeperHub: ${err instanceof Error ? err.message : String(err)}`,
         timestamp: Date.now(),
       })
     }
