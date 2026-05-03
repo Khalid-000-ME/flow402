@@ -528,10 +528,14 @@ export default function SpawnStudio() {
         body: JSON.stringify({ tokenIn: swapTokenIn, tokenOut: swapTokenOut, amountIn: swapAmount }),
       })
       const data = await res.json() as Record<string, string | number | boolean>
+      // If HTTP error (4xx/5xx), the body has { error } but no success:false — add it explicitly
+      const payload = res.ok
+        ? { ...data }
+        : { success: false as boolean, error: (data.error as string) ?? `HTTP ${res.status}`, ...data }
       const evt: ChatEvent = {
         id:        crypto.randomUUID(),
         type:      'swap_executed',
-        data:      { ...data, tokenIn: swapTokenIn, tokenOut: swapTokenOut, amountIn: swapAmount } as Record<string, string | number | boolean>,
+        data:      { ...payload, tokenIn: swapTokenIn, tokenOut: swapTokenOut, amountIn: swapAmount } as Record<string, string | number | boolean>,
         timestamp: Date.now(),
       }
       setEvents(prev => [...prev, evt])
@@ -668,7 +672,17 @@ export default function SpawnStudio() {
                     />
                     <select
                       value={swapTokenIn}
-                      onChange={e => setSwapTokenIn(e.target.value)}
+                      onChange={e => {
+                        const next = e.target.value
+                        setSwapTokenIn(next)
+                        // Prevent same-token pair
+                        if (next === swapTokenOut) {
+                          setSwapTokenOut(next === 'ETH' ? 'USDC' : 'ETH')
+                        }
+                        // Sensible default amounts per token
+                        if (['ETH', 'WETH'].includes(next)) setSwapAmount('0.0001')
+                        else setSwapAmount('1')
+                      }}
                       style={{ fontSize: 11, fontWeight: 700, padding: '5px 7px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6, color: '#fff', cursor: 'pointer', outline: 'none' }}
                     >
                       <option>ETH</option>
@@ -679,12 +693,22 @@ export default function SpawnStudio() {
                     <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>→</span>
                     <select
                       value={swapTokenOut}
-                      onChange={e => setSwapTokenOut(e.target.value)}
+                      onChange={e => {
+                        const next = e.target.value
+                        setSwapTokenOut(next)
+                        // Prevent same-token pair
+                        if (next === swapTokenIn) {
+                          setSwapTokenIn(next === 'ETH' ? 'USDC' : 'ETH')
+                          if (['ETH', 'WETH'].includes(next === 'ETH' ? 'USDC' : 'ETH')) setSwapAmount('0.0001')
+                          else setSwapAmount('1')
+                        }
+                      }}
                       style={{ flex: 1, fontSize: 11, fontWeight: 700, padding: '5px 7px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6, color: '#fff', cursor: 'pointer', outline: 'none' }}
                     >
+                      <option>ETH</option>
+                      <option>WETH</option>
                       <option>USDC</option>
                       <option>DAI</option>
-                      <option>WETH</option>
                       <option>UNI</option>
                     </select>
                   </div>

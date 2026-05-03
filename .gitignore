@@ -42,7 +42,6 @@ next-env.d.ts
 
 *.md
 !README.md
-!UNISWAP_API.md
 
 artifacts/
 cache/

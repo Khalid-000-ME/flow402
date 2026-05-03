@@ -24,6 +24,7 @@ import {
 } from './agents'
 import { setRunRecord } from './runStore'
 import { distributeInferenceFees } from './fees'
+import { parseSwapIntent, executeSwap } from './swap'
 import type { RunEvent } from '@/lib/types'
 
 // ── AgentRegistry ABI (minimal — only commitRun) ──────────────────────────────
@@ -298,6 +299,49 @@ export async function orchestrate(
   ]
     .filter(Boolean)
     .join('\n\n')
+
+  // ── Step 4.5: Uniswap swap — execute if trade intent in prompt ─────────────
+  if (process.env.SWAP_ENABLED === 'true' && process.env.UNISWAP_API_KEY) {
+    const intent = parseSwapIntent(prompt)
+    if (intent) {
+      track({
+        type: 'agent_message',
+        agentType: 'Orchestrator',
+        content: `Trade signal detected: swap ${intent.amountIn} ${intent.tokenIn} → ${intent.tokenOut} (chain ${intent.chainId ?? 11155111})`,
+        timestamp: Date.now(),
+      })
+      try {
+        const swapResult = await executeSwap(intent)
+        track({
+          type:       'swap_executed' as RunEvent['type'],
+          agentType:  'Orchestrator',
+          tokenIn:    intent.tokenIn,
+          tokenOut:   intent.tokenOut,
+          amountIn:   swapResult.amountIn,
+          amountOut:  swapResult.amountOut,
+          txHash:     swapResult.txHash,
+          explorerUrl: swapResult.explorerUrl,
+          routing:    swapResult.routing,
+          chainId:    String(swapResult.chainId),
+          success:    swapResult.success,
+          error:      swapResult.error,
+          timestamp:  Date.now(),
+        } as unknown as RunEvent)
+      } catch (err) {
+        track({
+          type:      'swap_executed' as RunEvent['type'],
+          agentType: 'Orchestrator',
+          tokenIn:   intent.tokenIn,
+          tokenOut:  intent.tokenOut,
+          amountIn:  intent.amountIn,
+          amountOut: '0',
+          success:   false,
+          error:     err instanceof Error ? err.message : String(err),
+          timestamp: Date.now(),
+        } as unknown as RunEvent)
+      }
+    }
+  }
 
   // ── Step 5: Upload to 0G Storage ────────────────────────────────────────
   let rootHash = ''

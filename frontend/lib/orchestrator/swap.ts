@@ -105,29 +105,48 @@ export interface SwapResult {
  *   "trade 0.0001 ETH for DAI"
  */
 export function parseSwapIntent(prompt: string): SwapIntent | null {
-  // Pattern: buy/swap/trade X TOKEN [worth of / for / of] TOKEN2
+  // Pattern: buy/swap/trade [X] TOKEN [worth of / for / of / to] TOKEN2
   const match = prompt.match(
-    /\b(?:buy|purchase|swap|trade|sell)\s+([\d.]+)\s+(ETH|WETH|USDC|USDT|WBTC|DAI|UNI|LINK|AAVE|ARB)\s+(?:worth\s+of|of|for)\s+(ETH|WETH|USDC|USDT|WBTC|DAI|UNI|LINK|AAVE|ARB)\b/i
+    /\b(?:buy|purchase|swap|trade|sell)\s+([\d.]+)?\s*(ETH|WETH|USDC|USDT|WBTC|DAI|UNI|LINK|AAVE|ARB)\s+(?:worth\s+of|of|for|to)\s+(ETH|WETH|USDC|USDT|WBTC|DAI|UNI|LINK|AAVE|ARB)\b/i
   )
   if (match) {
+    const amount = match[1] || (['ETH', 'WETH'].includes(match[2].toUpperCase()) ? '0.0001' : '1')
     return {
       tokenIn:  match[2].toUpperCase(),
       tokenOut: match[3].toUpperCase(),
-      amountIn: match[1],
+      amountIn: amount,
       chainId:  SWAP_CHAIN_ID,
     }
   }
 
-  // Pattern: "buy 0.0001 ETH worth of USDC" (tokenOut implied as ETH spend)
+  // Pattern: "buy [X] ETH [worth of] USDC" (tokenOut implied as ETH spend)
   const shortMatch = prompt.match(
-    /\b(?:buy|purchase|swap)\s+([\d.]+)\s+(ETH)\s+(?:worth\s+of\s+)?(\w+)\b/i
+    /\b(?:buy|purchase|swap)\s+([\d.]+)?\s*(ETH)\s+(?:worth\s+of\s+)(ETH|WETH|USDC|USDT|WBTC|DAI|UNI|LINK|AAVE|ARB)\b/i
   )
   if (shortMatch) {
+    const amount = shortMatch[1] || '0.0001'
     return {
       tokenIn:  'ETH',
       tokenOut: shortMatch[3].toUpperCase(),
-      amountIn: shortMatch[1],
+      amountIn: amount,
       chainId:  SWAP_CHAIN_ID,
+    }
+  }
+
+  // Catch-all: "buy 0.0001 ETH", "swap USDC"
+  const veryShortMatch = prompt.match(/\b(?:buy|swap|trade|purchase)\s+([\d.]+)?\s*(ETH|WETH|USDC|DAI|UNI)\b/i)
+  if (veryShortMatch) {
+    const targetToken = veryShortMatch[2].toUpperCase()
+    // If they ask to buy/swap ETH, assume they want to spend USDC to get ETH.
+    // Otherwise, assume they want to spend ETH to get the token.
+    const tokenIn = ['ETH', 'WETH'].includes(targetToken) ? 'USDC' : 'ETH'
+    const tokenOut = targetToken
+    const amountIn = veryShortMatch[1] || (tokenIn === 'ETH' ? '0.0001' : '1')
+    return {
+      tokenIn,
+      tokenOut,
+      amountIn,
+      chainId: SWAP_CHAIN_ID,
     }
   }
 
@@ -233,8 +252,14 @@ export async function executeSwap(intent: SwapIntent): Promise<SwapResult> {
   if (['DUTCH_V2', 'DUTCH_V3', 'PRIORITY'].includes(routing)) {
     let signature: string | undefined
     if (permitData) {
-      const pd = permitData as unknown as Parameters<typeof signer.signTypedData>
-      signature = await signer.signTypedData(pd[0], pd[1], pd[2])
+      // Uniswap returns { domain, types, values } — NOT an array
+      const { domain, types, values, value } = permitData as {
+        domain: Parameters<typeof signer.signTypedData>[0]
+        types:  Parameters<typeof signer.signTypedData>[1]
+        values?: Parameters<typeof signer.signTypedData>[2]
+        value?:  Parameters<typeof signer.signTypedData>[2]
+      }
+      signature = await signer.signTypedData(domain, types, values ?? value ?? {})
     }
 
     const orderResp = await fetch(`${UNISWAP_BASE}/order`, {
@@ -253,8 +278,15 @@ export async function executeSwap(intent: SwapIntent): Promise<SwapResult> {
   } else {
     let signature: string | undefined
     if (permitData) {
-      const pd = permitData as unknown as Parameters<typeof signer.signTypedData>
-      signature = await signer.signTypedData(pd[0], pd[1], pd[2])
+      // Uniswap returns { domain, types, values } — NOT an array
+      const { domain, types, values, value } = permitData as {
+        domain: Parameters<typeof signer.signTypedData>[0]
+        types:  Parameters<typeof signer.signTypedData>[1]
+        values?: Parameters<typeof signer.signTypedData>[2]
+        value?:  Parameters<typeof signer.signTypedData>[2]
+      }
+      console.log('[swap] Signing Permit2:', JSON.stringify({ domain, typeKeys: Object.keys(types ?? {}), value: values ?? value }))
+      signature = await signer.signTypedData(domain, types, values ?? value ?? {})
     }
 
     const swapResp = await fetch(`${UNISWAP_BASE}/swap`, {
@@ -279,7 +311,31 @@ export async function executeSwap(intent: SwapIntent): Promise<SwapResult> {
     const provider = new ethers.JsonRpcProvider(ETH_RPC_URL)
     const wallet   = signer.connect(provider)
 
-    // Broadcast signed transaction
+    // ── Permit2 ERC-20 allowance guard ─────────────────────────────────────────
+    // For ERC-20 inputs (not native ETH), Permit2 needs a standard on-chain
+    // approve() before the off-chain PermitSingle signature is accepted.
+    // The Universal Router will revert with no reason if this is missing.
+    if (!isNativeIn) {
+      const PERMIT2 = '0x000000000022D473030F116dDEE9F6B43aC78BA3'
+      const erc20   = new ethers.Contract(tokenIn, [
+        'function allowance(address owner, address spender) view returns (uint256)',
+        'function approve(address spender, uint256 amount) returns (bool)',
+      ], wallet)
+
+      const currentAllowance: bigint = await erc20.allowance(wallet.address, PERMIT2)
+      console.log(`[swap] Permit2 allowance for ${intent.tokenIn}: ${currentAllowance} (need ${amountWei})`)
+
+      if (currentAllowance < amountWei) {
+        console.log(`[swap] Approving Permit2 to spend ${intent.tokenIn} (MaxUint256)…`)
+        const approveTx = await erc20.approve(PERMIT2, ethers.MaxUint256)
+        const approveReceipt = await approveTx.wait()
+        console.log(`[swap] Permit2 approved ✓ tx=${approveReceipt?.hash ?? approveTx.hash}`)
+      } else {
+        console.log(`[swap] Permit2 allowance sufficient ✓`)
+      }
+    }
+
+    // Broadcast signed swap transaction
     const tx = await wallet.sendTransaction({
       to:       swap.to,
       data:     swap.data,
