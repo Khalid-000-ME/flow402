@@ -4,7 +4,6 @@ import {
   Archive,
   Swords,
   BadgeCheck,
-  ShieldCheck,
 } from 'lucide-react'
 
 const features = [
@@ -37,12 +36,6 @@ const features = [
     title: 'ENS agent identities',
     desc: 'Each agent type carries a human-readable ENS subname (e.g. defi-analyst.orchanet.eth) and an on-chain iNFT token ID.',
     color: '#4ADE80',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'KeeperHub guaranteed execution',
-    desc: 'Final run commitments use KeeperHub for guaranteed on-chain settlement with MEV protection and automatic retry.',
-    color: '#F472B6',
   },
 ]
 

@@ -137,7 +137,6 @@ export default function LandingHero() {
             { label: '0G Compute', color: '#F0B429', bg: 'rgba(240,180,41,0.08)', border: 'rgba(240,180,41,0.2)' },
             { label: '0G Storage', color: '#2DD4BF', bg: 'rgba(13,148,136,0.08)', border: 'rgba(13,148,136,0.2)' },
             { label: 'ENS Identity', color: '#A78BFA', bg: 'rgba(124,58,237,0.08)', border: 'rgba(124,58,237,0.2)' },
-            { label: 'KeeperHub', color: '#4ADE80', bg: 'rgba(22,163,74,0.08)', border: 'rgba(22,163,74,0.2)' },
             { label: 'TEE Verified', color: '#FB923C', bg: 'rgba(234,88,12,0.08)', border: 'rgba(234,88,12,0.2)' },
           ].map((badge) => (
             <span

@@ -5,7 +5,6 @@ const steps = [
   { actor: '0G Compute', label: 'TEE inference settle', desc: 'Each agent call returns a real on-chain txHash', color: '#F0B429' },
   { actor: 'Critic', label: 'Adversarial debate', desc: 'Challenges weakest findings · forces defended consensus', color: '#EA580C' },
   { actor: '0G Storage', label: 'Artifact committed', desc: 'Full run record stored · rootHash returned', color: '#0D9488' },
-  { actor: 'KeeperHub', label: 'On-chain proof', desc: 'commitRun() called with guaranteed settlement', color: '#16A34A' },
   { actor: 'User', label: 'Audit trail ready', desc: 'Every hash, every step, every vote — clickable and verifiable', color: '#F0B429' },
 ]
 
