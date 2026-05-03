@@ -35,7 +35,7 @@
 
   /* Fonts */
   --font-sans: var(--font-grotesk), 'Space Grotesk', system-ui, sans-serif;
-  --font-mono: var(--font-mono-var), 'Space Mono', 'Courier New', monospace;
+  --font-mono: var(--font-mono-var), 'JetBrains Mono', 'Courier New', monospace;
 
   /* Transitions */
   --transition-fast: 150ms ease;
@@ -122,7 +122,7 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   gap: 8px;
   padding: 12px 24px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   font-family: var(--font-sans);
   font-size: 14px;
   font-weight: 600;
@@ -169,7 +169,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-sm {
-  padding: 8px 16px;
+  padding: 7px 16px;
   font-size: 13px;
 }
 
@@ -199,6 +199,7 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: var(--radius-full);
   font-size: 11px;
   font-weight: 600;
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -234,11 +235,19 @@ h1, h2, h3, h4, h5, h6 {
   color: #A78BFA;
   border: 1px solid rgba(124, 58, 237, 0.3);
 }
+.pill-spawning .pill-dot {
+  background: #A78BFA;
+  animation: pulse-purple 1.8s infinite;
+}
 
 .pill-complete {
   background: rgba(13, 148, 136, 0.12);
   color: #2DD4BF;
   border: 1px solid rgba(13, 148, 136, 0.25);
+}
+.pill-complete .pill-dot {
+  background: #4ADE80;
+  animation: pulse-green 2.5s infinite;
 }
 
 .pill-failed {
@@ -246,11 +255,18 @@ h1, h2, h3, h4, h5, h6 {
   color: #FCA5A5;
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
+.pill-failed .pill-dot {
+  background: #FCA5A5;
+}
 
 .pill-debating {
   background: rgba(234, 88, 12, 0.12);
   color: #FB923C;
   border: 1px solid rgba(234, 88, 12, 0.25);
+}
+.pill-debating .pill-dot {
+  background: #FB923C;
+  animation: pulse-yellow 1.5s infinite;
 }
 
 /* ============================================
@@ -264,6 +280,11 @@ h1, h2, h3, h4, h5, h6 {
 @keyframes pulse-yellow {
   0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(240, 180, 41, 0.4); }
   50% { opacity: 0.8; box-shadow: 0 0 0 4px rgba(240, 180, 41, 0); }
+}
+
+@keyframes pulse-purple {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(167, 139, 250, 0.4); }
+  50% { opacity: 0.8; box-shadow: 0 0 0 4px rgba(167, 139, 250, 0); }
 }
 
 @keyframes shimmer {
@@ -300,39 +321,64 @@ h1, h2, h3, h4, h5, h6 {
    ============================================ */
 .nav {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 10px;
+  left: 12px;
+  right: 12px;
   z-index: 100;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 40px;
-  height: 64px;
-  background: rgba(8, 8, 8, 0.85);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 20px;
+  height: 54px;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255,255,255,0.07);
+  /* Same amber radial + grain as hero section */
+  background:
+    radial-gradient(ellipse 120% 200% at 50% -60%, rgba(240,180,41,0.13) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 80% at 0% 60%,    rgba(255,255,255,0.025) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 80% at 100% 60%,  rgba(255,248,220,0.03) 0%, transparent 55%),
+    #090909;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 4px 32px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.04) inset;
+  overflow: hidden;
 }
+/* Grain overlay via pseudo-element */
+.nav::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+  pointer-events: none;
+  opacity: 0.3;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23g)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 300px 300px;
+  mix-blend-mode: overlay;
+  z-index: 0;
+}
+.nav > * { position: relative; z-index: 1; }
 
 .nav-logo {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 18px;
+  gap: 8px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--text-primary);
+  text-decoration: none;
+  flex-shrink: 0;
 }
 
 .nav-logo .logo-mark {
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   background: var(--yellow);
-  border-radius: 8px;
+  border-radius: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 900;
   color: #080808;
 }
@@ -340,27 +386,32 @@ h1, h2, h3, h4, h5, h6 {
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .nav-link {
-  padding: 8px 14px;
-  border-radius: var(--radius-md);
-  font-size: 14px;
+  padding: 6px 13px;
+  border-radius: 8px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text-secondary);
   transition: all var(--transition-fast);
+  text-decoration: none;
 }
 
 .nav-link:hover {
   color: var(--text-primary);
-  background: var(--bg-card);
+  background: rgba(255,255,255,0.06);
 }
 
 .nav-link.active {
   color: var(--yellow);
   background: var(--yellow-glow);
 }
+
 
 /* ============================================
    Layout
@@ -372,7 +423,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .page-content {
-  padding-top: 88px;
+  padding-top: 82px;
   min-height: 100vh;
 }
 
@@ -411,12 +462,25 @@ h1, h2, h3, h4, h5, h6 {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--yellow);
   margin-bottom: 16px;
+}
+
+/* Green live-dot prepended to every section-label */
+.section-label::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ADE80;
+  flex-shrink: 0;
+  animation: pulse-green 2.5s infinite;
 }
 
 .divider {

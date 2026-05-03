@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
-import { Space_Grotesk, Space_Mono } from 'next/font/google'
+import { Space_Grotesk, DM_Sans, Instrument_Serif, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import Nav from '@/components/shared/Nav'
+import { WalletProvider } from '@/lib/wallet/WalletContext'
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -9,10 +10,23 @@ const spaceGrotesk = Space_Grotesk({
   weight: ['300', '400', '500', '600', '700'],
 })
 
-const spaceMono = Space_Mono({
+const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-mono-var',
-  weight: ['400', '700'],
+  weight: ['400', '500', '700'],
+})
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  variable: '--font-dm-sans',
+  weight: ['400', '500', '600', '700'],
+})
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ['latin'],
+  variable: '--font-instrument',
+  style: ['normal', 'italic'],
+  weight: '400',
 })
 
 export const metadata: Metadata = {
@@ -35,11 +49,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${spaceGrotesk.variable} ${spaceMono.variable}`}
+      className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} ${dmSans.variable} ${instrumentSerif.variable}`}
     >
       <body>
-        <Nav />
-        {children}
+        <WalletProvider>
+          <Nav />
+          {children}
+        </WalletProvider>
       </body>
     </html>
   )
