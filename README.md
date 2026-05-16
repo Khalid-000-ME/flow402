@@ -62,46 +62,71 @@ This is where Orchanet's intelligence lives. Rather than routing LLM calls to a 
 **How the Compute client is initialized:**
 ```typescript
 // frontend/lib/0g/compute.ts
-import { ZGServingUserBrokerBase } from '@0gfoundation/0g-compute-ts-sdk'
-
-const broker = await createZGComputeNetworkBroker(
-  wallet,
-  process.env.ZG_LEDGER_ADDRESS!
-)
+const { createZGComputeNetworkBroker } = await import('@0gfoundation/0g-compute-ts-sdk')
+const zgProvider = new ethers.JsonRpcProvider(RPC_URL)
+const wallet = new ethers.Wallet(PRIVATE_KEY, zgProvider)
+const broker = await createZGComputeNetworkBroker(wallet)
 ```
 
-**How inference is dispatched to a 0G provider node:**
+**How inference is dispatched to a 0G provider node (broker path):**
 ```typescript
-// Selecting a verified provider and running inference
-const provider = await broker.modelProcessor.selectProvider(model, 'model')
-const { endpoint, model: selectedModel } = await broker.getServiceMetadata(provider)
+// frontend/lib/0g/compute.ts — runWithBroker()
+const { endpoint, model } = await broker.inference.getServiceMetadata(providerAddress)
+const headers = await broker.inference.getRequestHeaders(providerAddress)
 
-const response = await fetch(`${endpoint}/chat/completions`, {
+const res = await fetch(`${endpoint}/chat/completions`, {
   method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${broker.getRequestHeaders(provider)}`,
-  },
+  headers: { 'Content-Type': 'application/json', ...headers },
   body: JSON.stringify({
-    model: selectedModel,
-    messages: [{ role: 'user', content: prompt }],
+    model,
     max_tokens: opts.maxTokens ?? 1024,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      ...messages,
+    ],
   }),
+})
+```
+
+**Alternatively — Simple OpenAI-compatible key path (preferred in production):**
+```typescript
+// frontend/lib/0g/compute.ts — runWithOpenAIKey()
+const client = new OpenAI({
+  baseURL: `${ZG_SERVICE_URL}/v1/proxy`,
+  apiKey: ZG_API_SECRET,
+})
+const response = await client.chat.completions.create({
+  model: process.env.ZG_MODEL || 'qwen/qwen-2.5-7b-instruct',
+  max_tokens: opts.maxTokens ?? 1024,
+  messages: [
+    { role: 'system', content: systemPrompt },
+    ...messages,
+  ],
 })
 ```
 
 The Orchestrator dispatches agent tasks in **parallel** using `Promise.all`, saturating multiple 0G compute provider nodes simultaneously. This means a 3-agent committee (Tokenomics Modeler + Smart Contract Auditor + Critic) all run their inference concurrently, dramatically reducing total pipeline latency while ensuring each agent's output is independently computed on a separate provider node — eliminating correlated failures.
 
-**Token usage tracking per inference:**
+**Token usage tracking and TEE signature settlement per inference:**
 ```typescript
-const usage = response.usage ?? { prompt_tokens: 0, completion_tokens: 0 }
-// Tracked per-agent and reported back to the orchestrator
+// frontend/lib/0g/compute.ts
+const usage = data.usage ?? { prompt_tokens: 0, completion_tokens: 0 }
+
+// processResponse verifies the TEE signature on the response
+const verifyResult = await broker.inference.processResponse(
+  providerAddress,
+  data.id,
+  JSON.stringify({ input_tokens: usage.prompt_tokens, output_tokens: usage.completion_tokens })
+)
+const verified = verifyResult === true
+
 return {
-  content: choice.message.content,
+  content,
+  verified,
+  model,
+  provider: providerAddress,
   promptTokens: usage.prompt_tokens,
   completionTokens: usage.completion_tokens,
-  provider,
-  model: selectedModel,
 }
 ```
 
@@ -115,32 +140,31 @@ Every token consumed by every agent is tracked granularly. This data feeds direc
 
 The 0G Settlement Ledger is what makes decentralized compute economically sustainable. Every inference request dispatched to a 0G provider node carries a cost, denominated in **OG tokens**, that is settled on-chain through the ledger contract. Orchanet's Orchestrator manages this settlement flow automatically.
 
-**Auto-funding logic before each pipeline run:**
-```typescript
-// frontend/lib/orchestrator/index.ts
-const unsettledFee = await broker.ledger.getUnsettledFee(providerAddress)
-const requiredBalance = LEDGER_MIN_BALANCE + unsettledFee
-
-const lockedFund = await broker.ledger.getLockedFund(providerAddress)
-if (lockedFund < requiredBalance) {
-  await broker.ledger.addLedger(providerAddress, requiredBalance - lockedFund)
-  console.log(`[Auto-funding] Topped up ledger by ${requiredBalance - lockedFund} OG`)
-}
+**Auto-funding check seen in live server logs:**
+```
+[DEBUG] [Auto-funding] Provider unsettled fee: 0.006460 0G
+[DEBUG] [Auto-funding] Check: unsettledFee=0.006460 0G, requiredBalance=2.006460 0G
+[DEBUG] Locked fund for provider 0xa48f01287233509FD694a22Bf840225062E67836: 2995783600000000000, required: 2006460400000000000
 ```
 
-Before every run, the Orchestrator:
-1. Queries the provider's current **unsettled fee** balance from the ledger contract.
-2. Calculates the **minimum required locked balance** (`LEDGER_MIN_BALANCE + unsettledFee`).
+Before every run, the broker SDK automatically:
+1. Queries the provider's current **unsettled fee** balance from the ledger.
+2. Calculates the **minimum required locked balance**.
 3. Compares against the current **locked fund** for the provider.
-4. If underfunded, **automatically tops up** the ledger with OG tokens from the Orchestrator wallet.
+4. If underfunded, **automatically tops up** the balance from the Orchestrator wallet.
 
 This guarantees that the pipeline never stalls mid-inference due to an underfunded ledger — a subtle but critical engineering requirement for production-grade decentralized compute.
 
-**Fee distribution after inference:**
+**TEE signature verification after inference:**
 ```typescript
-// After each agent inference call completes
-await broker.ledger.processResponse(provider, response, sig)
-// OG tokens flow from Orchestrator → 0G Provider Node
+// frontend/lib/0g/compute.ts
+// processResponse verifies the TEE signature. Returns true = verified, false = unverifiable
+const verifyResult = await broker.inference.processResponse(
+  providerAddress,
+  response.id,
+  JSON.stringify({ input_tokens: usage.prompt_tokens, output_tokens: usage.completion_tokens })
+)
+// Settlement txHash is emitted internally by the SDK auto-funder
 ```
 
 The `processResponse` call handles the cryptographic verification of the inference response and triggers the OG token transfer to the provider node. This is the moment where **trustless payment for trustless compute** occurs — no escrow, no intermediary, no trust assumption.
@@ -150,7 +174,7 @@ The `processResponse` call handles the cryptographic verification of the inferen
 ### 🗄️ 0G Storage — The Provenance Layer
 
 **File:** `frontend/lib/0g/storage.ts`
-**SDK:** `@0gfoundation/0g-js-sdk`
+**SDK:** `@0gfoundation/0g-storage-ts-sdk`
 
 0G Storage is the cornerstone of Orchanet's verifiability guarantees. Once the agent committee finishes debating and a consensus is reached, the Orchestrator compiles a complete **Run Record** — a structured JSON artifact containing every piece of reasoning, every agent output, and every on-chain receipt from the entire pipeline. This artifact is then uploaded to the **0G Storage network**.
 
@@ -176,25 +200,21 @@ const runRecord = {
 **How artifacts are uploaded to 0G Storage nodes:**
 ```typescript
 // frontend/lib/0g/storage.ts
-import { ZgFile, Indexer } from '@0gfoundation/0g-js-sdk'
+const sdk = await import('@0gfoundation/0g-storage-ts-sdk')
+const signer = new ethers.Wallet(PRIVATE_KEY, new ethers.JsonRpcProvider(RPC_URL))
+const indexer = new sdk.Indexer(INDEXER_RPC)
 
-const zgFile = await ZgFile.fromBuffer(
-  Buffer.from(JSON.stringify(artifact)),
-  'application/json'
-)
+// Wrap the JSON payload in an in-memory MemData object
+const bytes = new TextEncoder().encode(JSON.stringify(data))
+const memData = new sdk.MemData(bytes)
 
-// Compute Merkle tree for the artifact
-const [tree, treeErr] = await zgFile.merkleTree()
-const rootHash = tree.rootHash()
+// Upload returns [{ txHash, rootHash, txSeq } | result, error]
+const [result, err] = await indexer.upload(memData, RPC_URL, signer)
+if (err) throw new Error(`0G Storage upload failed: ${err}`)
 
-// Submit to 0G Storage indexer → dispersed to storage nodes
-const indexer = new Indexer(process.env.ZG_INDEXER_RPC!)
-const [txHash, uploadErr] = await indexer.upload(
-  zgFile,
-  process.env.ZG_STORAGE_RPC!,
-  zgSigner,
-  { expectedReplica: 1, finalityRequired: true }
-)
+// Normalise result — rootHash is the Merkle root / permanent content address
+const rootHash = result?.rootHash ?? result?.root ?? result?.hash ?? ''
+const txHash   = result?.txHash ?? ''
 ```
 
 The upload flow involves:
@@ -238,14 +258,20 @@ const AGENT_REGISTRY_ABI = [
 **Identity verification during orchestration:**
 ```typescript
 // frontend/lib/0g/agentIdentity.ts
-const contract = new ethers.Contract(AGENT_REGISTRY_ADDRESS, AGENT_REGISTRY_ABI, provider)
-const agent = await contract.getAgentByType(agentType)
+const provider = new ethers.JsonRpcProvider(RPC_URL)
+const registry = new ethers.Contract(REGISTRY_ADDRESS, REGISTRY_ABI, provider)
 
-// Verify the metadata hash: keccak256(agentType + ensName + storageRootHash)
+// eth_call — zero gas
+const agent = await registry.getAgentByType(agentType)
+
+// Replicate the contract's hash locally: keccak256(abi.encodePacked(agentType, ensName, storageRootHash))
 const computedHash = ethers.keccak256(
-  ethers.toUtf8Bytes(`${agent.agentType}${agent.ensName}${agent.storageRootHash}`)
+  ethers.solidityPacked(
+    ['string', 'string', 'string'],
+    [agentType, ensName, storageRootHash]
+  )
 )
-const verified = computedHash === agent.metadataHash
+const verified = computedHash.toLowerCase() === metadataHash.toLowerCase()
 ```
 
 The `metadataHash` is a `keccak256` commitment that ties together the agent's `agentType`, its human-readable name, and the `storageRootHash` of its original model specification artifact stored on 0G Storage. If any of these values are tampered with, the hash check fails and the agent is rejected from the pipeline.
@@ -276,16 +302,12 @@ A core design insight behind Orchanet is that **quality of inference scales with
 3. **Score-based consensus:** The Critic returns structured JSON with per-agent quality scores and a `consensus_reached` boolean. This score is embedded in the Run Record and uploaded to 0G Storage.
 
 ```typescript
-// Critic system prompt driving adversarial inference on 0G Compute
-`You are a hyper-critical AI debate moderator. You will be given outputs from specialist agents.
-Your job is to challenge every claim, identify the weakest argument, and force a consensus.
-Return ONLY valid JSON: {
-  sentiment: 'GOOD' | 'RISKY' | 'CRITICAL' | 'NEUTRAL',
-  weakest_claim: string,
-  challenge: string,
-  agent_scores: { [agentType]: number },
-  consensus_reached: boolean
-}`
+// frontend/lib/orchestrator/agents.ts — Critic agent system prompt (actual)
+`You are an adversarial critic for Orcha-net. You receive outputs from multiple specialist agents.
+Your job: (1) identify the weakest or most unsupported claim across all outputs,
+(2) challenge it with a specific counter-argument, (3) assign a confidence score to each agent's output.
+Return ONLY valid JSON with fields: sentiment (one of: GOOD, RISKY, CRITICAL, NEUTRAL — based on overall consensus quality),
+weakest_claim, challenge, agent_scores{}, consensus_reached (bool).`
 ```
 
 This pattern turns 0G Compute from a simple inference endpoint into a **quality assurance mechanism** — the adversarial critique loop catches hallucinations, exposes contradictions, and produces a debate transcript that is far more trustworthy than any single model's response.
@@ -297,13 +319,36 @@ This pattern turns 0G Compute from a simple inference endpoint into a **quality 
 Every artifact uploaded to 0G Storage is permanently retrievable using its `rootHash`. Orchanet exposes a download endpoint that queries the 0G Storage network directly:
 
 ```typescript
-// frontend/app/api/storage/download/route.ts
-const indexer = new Indexer(process.env.ZG_INDEXER_RPC!)
-const [fileBuffer, err] = await indexer.download(
-  rootHash,
-  process.env.ZG_STORAGE_RPC!,
-  false // verifyIntegrity = false for speed; set true for full Merkle verification
-)
+// frontend/lib/0g/storage.ts — downloadFromStorage()
+const indexer = await getIndexer() // new sdk.Indexer(INDEXER_RPC)
+
+// downloadToBlob returns [Blob, Error | null]
+const result = await indexer.downloadToBlob(rootHash, { proof: true })
+const [blob, dlErr] = Array.isArray(result) ? result : [result, null]
+
+// Decode blob → text → JSON
+const buf  = await blob.arrayBuffer()
+const text = Buffer.from(buf).toString('utf8')
+return JSON.parse(text)
+```
+
+If the indexer is unavailable, Orchanet falls back to querying the storage nodes directly via the `zgs_downloadSegment` JSON-RPC method:
+```typescript
+// Fallback: direct JSON-RPC to known storage nodes
+const res = await fetch(node, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'zgs_downloadSegment',
+    params: [rootHash, 0, 10],
+    id: 1,
+  }),
+})
+const rpc = await res.json()
+// result is base64-encoded segment data
+const raw = Buffer.from(rpc.result, 'base64').toString('utf8')
+return JSON.parse(raw.replace(/\0+$/, '').trim())
 ```
 
 This means any run record — including the full agent debate, consensus scores, and iNFT identity snapshots — can be independently retrieved and verified by anyone with the `rootHash`. There is no Orchanet server required for retrieval. The data lives on 0G Storage nodes permanently.
@@ -361,17 +406,21 @@ npm install
 Create `frontend/.env.local`:
 
 ```env
-# 0G Compute
-ZG_COMPUTE_RPC=https://your-0g-compute-rpc
-ZG_LEDGER_ADDRESS=0x...              # 0G Ledger contract address
-ZG_PRIVATE_KEY=your_wallet_key       # Must hold OG tokens for compute fees
+# 0G Chain (Galileo Testnet)
+ZG_RPC_URL=https://evmrpc-testnet.0g.ai
+ZG_PRIVATE_KEY=your_wallet_private_key   # Must hold A0GI for gas
+
+# 0G Compute — Simple key path (recommended)
+ZG_SERVICE_URL=https://your-0g-compute-service-url
+ZG_API_SECRET=your_api_secret
+# OR set a provider address directly:
+ZG_PROVIDER_DEFAULT=0xa48f01287233509FD694a22Bf840225062E67836
 
 # 0G Storage
-ZG_STORAGE_RPC=https://your-0g-storage-rpc
-ZG_INDEXER_RPC=https://your-0g-indexer-rpc
+ZG_INDEXER_RPC=https://indexer-storage-testnet-turbo.0g.ai
 
-# AgentRegistry
-AGENT_REGISTRY_ADDRESS=0x...         # Deployed AgentRegistry contract
+# AgentRegistry (deployed on 0G Galileo Testnet)
+NEXT_PUBLIC_AGENT_REGISTRY_ADDRESS=0xB6061bC7489bDAe71cAeFd8d86A5800a78fa9bE9
 ```
 
 ### Run
