@@ -1,10 +1,10 @@
-![Orchanet Banner](frontend/public/banner.png)
+![Orcha-net Banner](frontend/public/banner.png)
 
-# Orchanet
+# Orcha-net
 
 > **Spawn High-Performance Agents. Execute Trustless Inference.**
 
-Orchanet is a decentralized multi-agent AI orchestration protocol built entirely on the **0G Network**. It solves the fundamental trust problem in AI-driven applications: there is currently no way to verify *how* an AI reached its conclusion, *who* ran the inference, or *whether* the output was tampered with. Orchanet solves this by treating every AI inference task as a first-class on-chain event, anchored by 0G's infrastructure at every layer of the pipeline — from compute dispatch and fee settlement, to immutable storage provenance and on-chain agent identity.
+Orcha-net is a decentralized multi-agent AI orchestration protocol built entirely on the **0G Network**. It solves the fundamental trust problem in AI-driven applications: there is currently no way to verify *how* an AI reached its conclusion, *who* ran the inference, or *whether* the output was tampered with. Orcha-net solves this by treating every AI inference task as a first-class on-chain event, anchored by 0G's infrastructure at every layer of the pipeline — from compute dispatch and fee settlement, to immutable storage provenance and on-chain agent identity.
 
 Every agent spawned by Orchanet runs on **0G Compute provider nodes**. Every run record is sealed permanently on **0G Storage**. Every agent identity is verified against an on-chain **AgentRegistry** smart contract. This is not a shallow integration — 0G is the bedrock on which Orchanet's trustlessness is built.
 
@@ -443,7 +443,7 @@ npm run dev
    - **RPC URL:** `https://evmrpc-testnet.0g.ai`
    - **Chain ID:** `16602`
    - **Currency Symbol:** `A0GI`
-3. Get free testnet A0GI from the faucet: **[0g-faucet-hackathon.vercel.app](https://0g-faucet-hackathon.vercel.app/)**
+3. Get free testnet A0GI from the faucet: **[faucet.0g.ai](https://faucet.0g.ai)**
 4. Export your wallet's private key and set it as `ZG_PRIVATE_KEY` in `frontend/.env.local`.
 
 ### Step 2 — Get a 0G Compute API Key
@@ -512,7 +512,7 @@ Each agent's system prompt is permanently stored on 0G Storage. The root hashes 
 | **EVM RPC** | `https://evmrpc-testnet.0g.ai` |
 | **Storage Indexer RPC** | `https://indexer-storage-testnet-turbo.0g.ai` |
 | **Block Explorer** | [chainscan-galileo.0g.ai](https://chainscan-galileo.0g.ai) |
-| **Faucet** | [0g-faucet-hackathon.vercel.app](https://0g-faucet-hackathon.vercel.app/) |
+| **Faucet** | [faucet.0g.ai](https://faucet.0g.ai) |
 
 ---
 
