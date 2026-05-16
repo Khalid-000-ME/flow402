@@ -443,7 +443,7 @@ npm run dev
    - **RPC URL:** `https://evmrpc-testnet.0g.ai`
    - **Chain ID:** `16602`
    - **Currency Symbol:** `A0GI`
-3. Get free testnet A0GI from the faucet: **[faucet.0g.ai](https://faucet.0g.ai)**
+3. Get free testnet A0GI from the faucet: **[0g-faucet-hackathon.vercel.app](https://0g-faucet-hackathon.vercel.app/)**
 4. Export your wallet's private key and set it as `ZG_PRIVATE_KEY` in `frontend/.env.local`.
 
 ### Step 2 — Get a 0G Compute API Key
@@ -512,7 +512,7 @@ Each agent's system prompt is permanently stored on 0G Storage. The root hashes 
 | **EVM RPC** | `https://evmrpc-testnet.0g.ai` |
 | **Storage Indexer RPC** | `https://indexer-storage-testnet-turbo.0g.ai` |
 | **Block Explorer** | [chainscan-galileo.0g.ai](https://chainscan-galileo.0g.ai) |
-| **Faucet** | [faucet.0g.ai](https://faucet.0g.ai) |
+| **Faucet** | [0g-faucet-hackathon.vercel.app](https://0g-faucet-hackathon.vercel.app/) |
 
 ---
 
