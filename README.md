@@ -391,8 +391,8 @@ All contracts are deployed on the **0G Galileo Testnet** (Chain ID: `16602`).
 
 | Contract | Address |
 |---|---|
-| **AgentRegistry** (iNFT identity & run commits) | [`0xB6061bC7489bDAe71cAeFd8d86A5800a78fa9bE9`](https://chainscan-newton.0g.ai/address/0xB6061bC7489bDAe71cAeFd8d86A5800a78fa9bE9) |
-| **SpawnFeeVault** (OG fee collection) | [`0x21963748516F8a7A17d3c5864c6E28CAC080BD63`](https://chainscan-newton.0g.ai/address/0x21963748516F8a7A17d3c5864c6E28CAC080BD63) |
+| **AgentRegistry** (iNFT identity & run commits) | [`0xB6061bC7489bDAe71cAeFd8d86A5800a78fa9bE9`](https://chainscan-galileo.0g.ai/address/0xB6061bC7489bDAe71cAeFd8d86A5800a78fa9bE9) |
+| **SpawnFeeVault** (OG fee collection) | [`0x21963748516F8a7A17d3c5864c6E28CAC080BD63`](https://chainscan-galileo.0g.ai/address/0x21963748516F8a7A17d3c5864c6E28CAC080BD63) |
 
 ### 0G Compute Provider
 
@@ -419,7 +419,7 @@ Each agent's system prompt is permanently stored on 0G Storage. The root hashes 
 | **Chain ID** | `16602` |
 | **EVM RPC** | `https://evmrpc-testnet.0g.ai` |
 | **Storage Indexer RPC** | `https://indexer-storage-testnet-turbo.0g.ai` |
-| **Block Explorer** | [chainscan-newton.0g.ai](https://chainscan-newton.0g.ai) |
+| **Block Explorer** | [chainscan-galileo.0g.ai](https://chainscan-galileo.0g.ai) |
 | **Faucet** | [faucet.0g.ai](https://faucet.0g.ai) |
 
 ---
