@@ -383,7 +383,49 @@ npm run dev
 
 ---
 
+## Deployed Contracts & On-Chain Addresses
+
+All contracts are deployed on the **0G Galileo Testnet** (Chain ID: `16602`).
+
+### Smart Contracts
+
+| Contract | Address |
+|---|---|
+| **AgentRegistry** (iNFT identity & run commits) | [`0xB6061bC7489bDAe71cAeFd8d86A5800a78fa9bE9`](https://chainscan-newton.0g.ai/address/0xB6061bC7489bDAe71cAeFd8d86A5800a78fa9bE9) |
+| **SpawnFeeVault** (OG fee collection) | [`0x21963748516F8a7A17d3c5864c6E28CAC080BD63`](https://chainscan-newton.0g.ai/address/0x21963748516F8a7A17d3c5864c6E28CAC080BD63) |
+
+### 0G Compute Provider
+
+| Role | Address |
+|---|---|
+| **Default Inference Provider** (Qwen 2.5 7B Instruct) | `0xa48f01287233509FD694a22Bf840225062E67836` |
+
+### 0G Storage — Agent System Prompt Root Hashes
+
+Each agent's system prompt is permanently stored on 0G Storage. The root hashes below are the cryptographic anchors used by the `AgentRegistry` `metadataHash` verification:
+
+| Agent | 0G Storage Root Hash |
+|---|---|
+| **DeFi Analyst** | `0xbacf411b30ea702d261cb7af0cff85b96667393f68cfbe332c1b0bdc4437fec7` |
+| **Smart Contract Auditor** | `0xbd8b704e5a03c9e028c4ab0ce5160dd0c69bfaed4ba84a8f83d75f4d14ae833d` |
+| **Tokenomics Modeler** | `0x6c4a138a736b2a1bde2a3ed0a8c4cb36d5ab599ed65e3a22058cb69ff6eea7a4` |
+| **Critic** | `0xb0d1987807ea4e33d1869ff527fbdcf98f953f14660e7dd4cb17cc4ecf2e7341` |
+
+### Network Configuration
+
+| Parameter | Value |
+|---|---|
+| **Network** | 0G Galileo Testnet |
+| **Chain ID** | `16602` |
+| **EVM RPC** | `https://evmrpc-testnet.0g.ai` |
+| **Storage Indexer RPC** | `https://indexer-storage-testnet-turbo.0g.ai` |
+| **Block Explorer** | [chainscan-newton.0g.ai](https://chainscan-newton.0g.ai) |
+| **Faucet** | [faucet.0g.ai](https://faucet.0g.ai) |
+
+---
+
 ## Technical Stack
+
 
 | Layer | Technology |
 |---|---|
