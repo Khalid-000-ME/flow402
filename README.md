@@ -412,4 +412,4 @@ The 0G Network provided all three under a single cohesive infrastructure. Withou
 
 ## License
 
-MIT © 2026 Khalid
+MIT © 2026
