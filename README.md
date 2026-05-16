@@ -432,6 +432,49 @@ npm run dev
 
 ---
 
+## Testnet Setup & Faucet Instructions
+
+> This section is specifically for judges running the project locally.
+
+### Step 1 — Get a Wallet & Testnet A0GI Tokens
+
+1. Create a fresh EVM wallet (MetaMask or any compatible wallet).
+2. Add the **0G Galileo Testnet** network:
+   - **RPC URL:** `https://evmrpc-testnet.0g.ai`
+   - **Chain ID:** `16602`
+   - **Currency Symbol:** `A0GI`
+3. Get free testnet A0GI from the faucet: **[faucet.0g.ai](https://faucet.0g.ai)**
+4. Export your wallet's private key and set it as `ZG_PRIVATE_KEY` in `frontend/.env.local`.
+
+### Step 2 — Get a 0G Compute API Key
+
+The simplest way to access 0G Compute is via the CLI secret key:
+```bash
+npm install -g @0gfoundation/0g-compute-cli
+0g-compute-cli inference get-secret --provider 0xa48f01287233509FD694a22Bf840225062E67836 --output-file secret.json
+```
+Set the output values as `ZG_SERVICE_URL` and `ZG_API_SECRET` in your `.env.local`.
+
+Alternatively, explore live providers at **[build.0g.ai/compute/providers](https://build.0g.ai/compute/providers)**.
+
+### Step 3 — 0G Storage (No Extra Setup)
+
+0G Storage uses your existing `ZG_PRIVATE_KEY` wallet and the public indexer:
+```
+ZG_INDEXER_RPC=https://indexer-storage-testnet-turbo.0g.ai
+```
+No additional API key or signup required.
+
+### Step 4 — Verify On-Chain Contracts
+
+| Contract | Galileo Explorer |
+|---|---|
+| AgentRegistry | [chainscan-galileo.0g.ai/address/0xB6061...bE9](https://chainscan-galileo.0g.ai/address/0xB6061bC7489bDAe71cAeFd8d86A5800a78fa9bE9) |
+| SpawnFeeVault | [chainscan-galileo.0g.ai/address/0x2196...B63](https://chainscan-galileo.0g.ai/address/0x21963748516F8a7A17d3c5864c6E28CAC080BD63) |
+
+---
+
+
 ## Deployed Contracts & On-Chain Addresses
 
 All contracts are deployed on the **0G Galileo Testnet** (Chain ID: `16602`).
