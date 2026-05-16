@@ -1,6 +1,6 @@
 ![Orchanet Banner](frontend/public/banner.png)
 
-# Orchanet 🌐
+# Orchanet
 
 > **Spawn High-Performance Agents. Execute Trustless Inference.**
 
